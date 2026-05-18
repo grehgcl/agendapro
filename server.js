@@ -694,29 +694,35 @@ app.put('/api/admin/barbearias/:id', async (req, res) => {
     const { nome, email, senha, plano, telefone, cnpj } = req.body;
 
     try {
-        let query = 'UPDATE barbearias SET nome = $1, email = $2, telefone = $3, cnpj = $4, plano = $5';
-        let params = [nome, email, telefone || '', cnpj || '', plano];
-
-        if (senha && senha.trim() !== '') {
-            query += ', senha = $6';
-            params.push(senha);
-            query += ' WHERE id = $7';
-        } else {
-            query += ' WHERE id = $6';
-        }
-        params.push(id);
-
         if (USE_POSTGRES) {
-            // Converter para $n para PostgreSQL
-            const pgQuery = query.replace(/\?/g, (_, i) => `$${i + 1}`);
-            await db.query(pgQuery, params);
+            if (senha && senha.trim() !== '') {
+                await db.query(
+                    `UPDATE barbearias SET nome = $1, email = $2, telefone = $3, cnpj = $4, plano = $5, senha = $6 WHERE id = $7`,
+                    [nome, email, telefone || '', cnpj || '', plano, senha, id]
+                );
+            } else {
+                await db.query(
+                    `UPDATE barbearias SET nome = $1, email = $2, telefone = $3, cnpj = $4, plano = $5 WHERE id = $6`,
+                    [nome, email, telefone || '', cnpj || '', plano, id]
+                );
+            }
         } else {
-            const sqliteQuery = query.replace(/\$\d/g, '?');
-            await executarRun(db, sqliteQuery, params);
+            if (senha && senha.trim() !== '') {
+                await executarRun(db,
+                    `UPDATE barbearias SET nome = ?, email = ?, telefone = ?, cnpj = ?, plano = ?, senha = ? WHERE id = ?`,
+                    [nome, email, telefone || '', cnpj || '', plano, senha, id]
+                );
+            } else {
+                await executarRun(db,
+                    `UPDATE barbearias SET nome = ?, email = ?, telefone = ?, cnpj = ?, plano = ? WHERE id = ?`,
+                    [nome, email, telefone || '', cnpj || '', plano, id]
+                );
+            }
         }
 
         res.json({ mensagem: '✅ Barbearia atualizada!' });
     } catch (error) {
+        console.error('Erro ao atualizar:', error);
         res.status(500).json({ erro: error.message });
     }
 });
@@ -731,22 +737,31 @@ app.delete('/api/admin/barbearias/:id', async (req, res) => {
     const { id } = req.params;
 
     try {
-        const result = await executarQuery(db, 'SELECT nome FROM barbearias WHERE id = ?', [id]);
-        if (result.rows.length === 0) {
-            return res.status(404).json({ erro: 'Barbearia não encontrada' });
-        }
+        let nome = '';
+        if (USE_POSTGRES) {
+            const result = await db.query('SELECT nome FROM barbearias WHERE id = $1', [id]);
+            if (result.rows.length === 0) {
+                return res.status(404).json({ erro: 'Barbearia não encontrada' });
+            }
+            nome = result.rows[0].nome;
+            await db.query('DELETE FROM barbearias WHERE id = $1', [id]);
+        } else {
+            const result = await executarQuery(db, 'SELECT nome FROM barbearias WHERE id = ?', [id]);
+            if (result.rows.length === 0) {
+                return res.status(404).json({ erro: 'Barbearia não encontrada' });
+            }
+            nome = result.rows[0].nome;
+            await executarRun(db, 'DELETE FROM barbearias WHERE id = ?', [id]);
 
-        await executarRun(db, 'DELETE FROM barbearias WHERE id = ?', [id]);
-
-        if (!USE_POSTGRES) {
             const dbPath = `barbearia_${id}.db`;
             if (fs.existsSync(dbPath)) {
                 fs.unlinkSync(dbPath);
             }
         }
 
-        res.json({ mensagem: `✅ Barbearia "${result.rows[0].nome}" excluída!` });
+        res.json({ mensagem: `✅ Barbearia "${nome}" excluída!` });
     } catch (error) {
+        console.error('Erro ao excluir:', error);
         res.status(500).json({ erro: error.message });
     }
 });
@@ -762,34 +777,47 @@ app.put('/api/admin/barbearias/:id/status', async (req, res) => {
     const { status, dias_extras } = req.body;
 
     try {
-        const result = await executarQuery(db, 'SELECT data_expiracao FROM barbearias WHERE id = ?', [id]);
-        if (result.rows.length === 0) {
-            return res.status(404).json({ erro: 'Barbearia não encontrada' });
-        }
-
-        let query = 'UPDATE barbearias SET status = ?';
-        let params = [status];
-
-        if (dias_extras) {
-            let novaExpiracao = new Date(result.rows[0].data_expiracao);
-            novaExpiracao.setDate(novaExpiracao.getDate() + dias_extras);
-            query += ', data_expiracao = ?';
-            params.push(novaExpiracao.toISOString());
-        }
-
-        query += ' WHERE id = ?';
-        params.push(id);
-
         if (USE_POSTGRES) {
-            const pgQuery = query.replace(/\?/g, (_, i) => `$${i + 1}`);
-            await db.query(pgQuery, params);
+            if (dias_extras) {
+                const result = await db.query('SELECT data_expiracao FROM barbearias WHERE id = $1', [id]);
+                if (result.rows.length === 0) {
+                    return res.status(404).json({ erro: 'Barbearia não encontrada' });
+                }
+                let novaExpiracao = new Date(result.rows[0].data_expiracao);
+                novaExpiracao.setDate(novaExpiracao.getDate() + dias_extras);
+                await db.query(
+                    'UPDATE barbearias SET status = $1, data_expiracao = $2 WHERE id = $3',
+                    [status, novaExpiracao, id]
+                );
+            } else {
+                await db.query(
+                    'UPDATE barbearias SET status = $1 WHERE id = $2',
+                    [status, id]
+                );
+            }
         } else {
-            const sqliteQuery = query.replace(/\$\d/g, '?');
-            await executarRun(db, sqliteQuery, params);
+            if (dias_extras) {
+                const result = await executarQuery(db, 'SELECT data_expiracao FROM barbearias WHERE id = ?', [id]);
+                if (result.rows.length === 0) {
+                    return res.status(404).json({ erro: 'Barbearia não encontrada' });
+                }
+                let novaExpiracao = new Date(result.rows[0].data_expiracao);
+                novaExpiracao.setDate(novaExpiracao.getDate() + dias_extras);
+                await executarRun(db,
+                    'UPDATE barbearias SET status = ?, data_expiracao = ? WHERE id = ?',
+                    [status, novaExpiracao.toISOString(), id]
+                );
+            } else {
+                await executarRun(db,
+                    'UPDATE barbearias SET status = ? WHERE id = ?',
+                    [status, id]
+                );
+            }
         }
 
         res.json({ mensagem: '✅ Status atualizado!' });
     } catch (error) {
+        console.error('Erro ao alterar status:', error);
         res.status(500).json({ erro: error.message });
     }
 });
