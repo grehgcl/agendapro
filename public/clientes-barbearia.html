@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="pt">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Clientes - Minha Barbearia</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            padding: 16px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+            color: white;
+            padding: 24px 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 1.6em;
+            margin-bottom: 4px;
+        }
+
+        .header p {
+            font-size: 0.85em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 24px 20px;
+        }
+
+        /* Botão novo cliente */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .btn-novo {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .btn-novo:active {
+            transform: scale(0.97);
+        }
+
+        /* Busca */
+        .search-box {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: #17a2b8;
+        }
+
+        /* Estatísticas */
+        .stats {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .stats .total {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #17a2b8;
+        }
+
+        /* Lista de clientes */
+        .clientes-list {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .cliente-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            border-bottom: 1px solid #eee;
+            transition: background 0.2s;
+        }
+
+        .cliente-item:hover {
+            background: #f8f9fa;
+        }
+
+        .cliente-info {
+            flex: 1;
+        }
+
+        .cliente-nome {
+            font-weight: 600;
+            font-size: 1em;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .cliente-email {
+            font-size: 0.8em;
+            color: #666;
+            margin-bottom: 2px;
+            word-break: break-all;
+        }
+
+        .cliente-telefone {
+            font-size: 0.75em;
+            color: #999;
+            margin-top: 2px;
+        }
+
+        .cliente-acoes {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn-editar,
+        .btn-excluir {
+            background: none;
+            border: none;
+            font-size: 1.2em;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .btn-editar {
+            color: #17a2b8;
+        }
+
+        .btn-editar:hover {
+            background: rgba(23, 162, 184, 0.1);
+            transform: scale(1.1);
+        }
+
+        .btn-excluir {
+            color: #dc3545;
+        }
+
+        .btn-excluir:hover {
+            background: rgba(220, 53, 69, 0.1);
+            transform: scale(1.1);
+        }
+
+        .sem-clientes {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .btn-voltar {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 12px;
+            width: 100%;
+            margin-top: 20px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .btn-voltar:active {
+            transform: scale(0.98);
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 16px;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 24px;
+            max-width: 450px;
+            width: 100%;
+            overflow: hidden;
+            animation: modalIn 0.3s ease;
+        }
+
+        @keyframes modalIn {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+            color: white;
+            padding: 20px;
+        }
+
+        .modal-header h3 {
+            font-size: 1.2em;
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .modal-body .form-group {
+            margin-bottom: 16px;
+        }
+
+        .modal-body label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 0.9em;
+        }
+
+        .modal-body input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        .modal-body input:focus {
+            outline: none;
+            border-color: #17a2b8;
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 12px;
+            padding: 20px 24px;
+            border-top: 1px solid #eee;
+        }
+
+        .btn-salvar {
+            flex: 1;
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-salvar:active {
+            transform: scale(0.98);
+        }
+
+        .btn-cancelar-modal {
+            flex: 1;
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-cancelar-modal:active {
+            transform: scale(0.98);
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #28a745;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 40px;
+            font-size: 0.9em;
+            z-index: 1100;
+            white-space: nowrap;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            animation: slideUp 0.3s ease;
+        }
+
+        .toast.erro {
+            background: #dc3545;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateX(-50%) translateY(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(-50%) translateY(0);
+                opacity: 1;
+            }
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .spinner {
+            border: 3px solid #f0f0f0;
+            border-top: 3px solid #17a2b8;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Responsivo */
+        @media (max-width: 480px) {
+            .top-bar {
+                flex-direction: column;
+            }
+
+            .btn-novo {
+                width: 100%;
+                text-align: center;
+            }
+
+            .cliente-item {
+                flex-direction: column;
+                text-align: center;
+                gap: 12px;
+            }
+
+            .cliente-acoes {
+                justify-content: center;
+            }
+
+            .toast {
+                white-space: normal;
+                text-align: center;
+                max-width: 90%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>👥 Meus Clientes</h1>
+            <p>Gerencie sua carteira de clientes</p>
+        </div>
+
+        <div class="content">
+            <div class="top-bar">
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="🔍 Buscar por nome, email ou telefone...">
+                </div>
+                <button class="btn-novo" onclick="abrirModalNovo()">➕ Novo Cliente</button>
+            </div>
+
+            <div class="stats" id="stats">
+                <div class="total" id="totalClientes">0</div>
+                <div class="label">clientes cadastrados</div>
+            </div>
+
+            <div id="listaClientes">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Carregando clientes...</p>
+                </div>
+            </div>
+
+            <button class="btn-voltar" onclick="window.location.href='dashboard-barbearia.html'">← Voltar ao
+                Dashboard</button>
+        </div>
+    </div>
+
+    <!-- Modal de Cadastro/Edição -->
+    <div id="clienteModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">➕ Novo Cliente</h3>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Nome completo *</label>
+                    <input type="text" id="clienteNome" placeholder="Digite o nome completo" required>
+                </div>
+                <div class="form-group">
+                    <label>E-mail *</label>
+                    <input type="email" id="clienteEmail" placeholder="cliente@email.com" required>
+                </div>
+                <div class="form-group">
+                    <label>Telefone/WhatsApp</label>
+                    <input type="tel" id="clienteTelefone" placeholder="(11) 99999-9999">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancelar-modal" onclick="fecharModal()">Cancelar</button>
+                <button class="btn-salvar" onclick="salvarCliente()">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3000/api';
+        const barbearia = JSON.parse(localStorage.getItem('barbearia'));
+
+        if (!barbearia) {
+            window.location.href = 'login-barbearia.html';
+        }
+
+        let clientes = [];
+        let clienteEditandoId = null;
+
+        async function fetchAPI(endpoint, options = {}) {
+            const defaultOptions = {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'barbearia-id': barbearia.id,
+                    'Authorization': barbearia.token
+                }
+            };
+
+            const response = await fetch(`${API_URL}${endpoint}`, {
+                ...defaultOptions,
+                ...options,
+                headers: { ...defaultOptions.headers, ...options.headers }
+            });
+
+            if (response.status === 403) {
+                alert('Sessão expirada! Faça login novamente.');
+                window.location.href = 'login-barbearia.html';
+            }
+
+            return response;
+        }
+
+        async function carregarClientes() {
+            try {
+                const response = await fetchAPI('/clientes');
+                clientes = await response.json();
+                exibirClientes(clientes);
+                document.getElementById('totalClientes').textContent = clientes.length;
+            } catch (error) {
+                console.error('Erro:', error);
+                document.getElementById('listaClientes').innerHTML = `
+                    <div class="sem-clientes">
+                        ❌ Erro ao carregar clientes
+                        <button onclick="carregarClientes()" style="margin-top: 10px; padding: 8px 16px;">Tentar novamente</button>
+                    </div>
+                `;
+            }
+        }
+
+        function exibirClientes(clientesFiltrados) {
+            const container = document.getElementById('listaClientes');
+
+            if (!clientesFiltrados || clientesFiltrados.length === 0) {
+                container.innerHTML = `
+                    <div class="sem-clientes">
+                        📭 Nenhum cliente cadastrado ainda
+                        <button class="btn-novo" onclick="abrirModalNovo()" style="margin-top: 15px; display: inline-block; width: auto;">➕ Cadastrar primeiro cliente</button>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="clientes-list">
+                    ${clientesFiltrados.map(cliente => `
+                        <div class="cliente-item">
+                            <div class="cliente-info">
+                                <div class="cliente-nome">${escapeHtml(cliente.nome)}</div>
+                                <div class="cliente-email">📧 ${escapeHtml(cliente.email)}</div>
+                                <div class="cliente-telefone">📱 ${escapeHtml(cliente.telefone) || 'Não informado'}</div>
+                            </div>
+                            <div class="cliente-acoes">
+                                <button class="btn-editar" onclick="abrirModalEditar(${cliente.id})" title="Editar">✏️</button>
+                                <button class="btn-excluir" onclick="excluirCliente(${cliente.id}, '${escapeHtml(cliente.nome)}')" title="Excluir">🗑️</button>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        // Busca em tempo real
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            const termo = e.target.value.toLowerCase();
+            const filtrados = clientes.filter(cliente =>
+                cliente.nome.toLowerCase().includes(termo) ||
+                cliente.email.toLowerCase().includes(termo) ||
+                (cliente.telefone && cliente.telefone.includes(termo))
+            );
+            exibirClientes(filtrados);
+            document.getElementById('totalClientes').textContent = filtrados.length;
+        });
+
+        // Abrir modal para novo cliente
+        function abrirModalNovo() {
+            clienteEditandoId = null;
+            document.getElementById('modalTitle').textContent = '➕ Novo Cliente';
+            document.getElementById('clienteNome').value = '';
+            document.getElementById('clienteEmail').value = '';
+            document.getElementById('clienteTelefone').value = '';
+            document.getElementById('clienteModal').classList.add('show');
+        }
+
+        // Abrir modal para editar cliente
+        function abrirModalEditar(id) {
+            const cliente = clientes.find(c => c.id === id);
+            if (cliente) {
+                clienteEditandoId = id;
+                document.getElementById('modalTitle').textContent = '✏️ Editar Cliente';
+                document.getElementById('clienteNome').value = cliente.nome;
+                document.getElementById('clienteEmail').value = cliente.email;
+                document.getElementById('clienteTelefone').value = cliente.telefone || '';
+                document.getElementById('clienteModal').classList.add('show');
+            }
+        }
+
+        // Fechar modal
+        function fecharModal() {
+            document.getElementById('clienteModal').classList.remove('show');
+            clienteEditandoId = null;
+        }
+
+        // Salvar cliente (novo ou edição)
+        async function salvarCliente() {
+            const nome = document.getElementById('clienteNome').value.trim();
+            const email = document.getElementById('clienteEmail').value.trim();
+            const telefone = document.getElementById('clienteTelefone').value.trim();
+
+            if (!nome || !email) {
+                mostrarToast('Preencha nome e e-mail!', true);
+                return;
+            }
+
+            const dados = { nome, email, telefone };
+
+            try {
+                let response;
+                if (clienteEditandoId) {
+                    // Editar
+                    response = await fetchAPI(`/clientes/${clienteEditandoId}`, {
+                        method: 'PUT',
+                        body: JSON.stringify(dados)
+                    });
+                } else {
+                    // Novo
+                    response = await fetchAPI('/clientes', {
+                        method: 'POST',
+                        body: JSON.stringify(dados)
+                    });
+                }
+
+                const resultado = await response.json();
+
+                if (response.ok) {
+                    mostrarToast(clienteEditandoId ? '✅ Cliente atualizado!' : '✅ Cliente cadastrado!');
+                    fecharModal();
+                    carregarClientes();
+                } else {
+                    mostrarToast(resultado.erro || 'Erro ao salvar', true);
+                }
+            } catch (error) {
+                mostrarToast('Erro ao conectar com o servidor', true);
+            }
+        }
+
+        // Excluir cliente
+        async function excluirCliente(id, nome) {
+            if (confirm(`Tem certeza que deseja excluir "${nome}"?\n\nEssa ação não pode ser desfeita.`)) {
+                try {
+                    const response = await fetchAPI(`/clientes/${id}`, {
+                        method: 'DELETE'
+                    });
+
+                    const resultado = await response.json();
+
+                    if (response.ok) {
+                        mostrarToast('✅ Cliente excluído!');
+                        carregarClientes();
+                    } else {
+                        mostrarToast(resultado.erro || 'Erro ao excluir', true);
+                    }
+                } catch (error) {
+                    mostrarToast('Erro ao conectar com o servidor', true);
+                }
+            }
+        }
+
+        // Mostrar mensagem temporária
+        function mostrarToast(mensagem, erro = false) {
+            const toast = document.createElement('div');
+            toast.className = `toast ${erro ? 'erro' : ''}`;
+            toast.textContent = mensagem;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        // Escapar HTML
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Fechar modal ao clicar fora
+        document.getElementById('clienteModal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('clienteModal')) {
+                fecharModal();
+            }
+        });
+
+        // Inicializar
+        carregarClientes();
+    </script>
+</body>
+
+</html>

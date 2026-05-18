@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="pt">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Novo Agendamento - Minha AgendaPro</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            padding: 16px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 24px 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 1.6em;
+            margin-bottom: 4px;
+        }
+
+        .header p {
+            font-size: 0.85em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 24px 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 0.9em;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 16px;
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .horarios-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .horario-btn {
+            background: #f0f0f0;
+            border: 2px solid #e0e0e0;
+            padding: 12px 8px;
+            border-radius: 12px;
+            cursor: pointer;
+            text-align: center;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .horario-btn:hover:not(.ocupado) {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .horario-btn.selecionado {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .horario-btn.ocupado {
+            background: #f8d7da;
+            color: #721c24;
+            border-color: #f5c6cb;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        button[type="submit"] {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .btn-voltar {
+            background: #6c757d;
+            margin-top: 12px;
+        }
+
+        .mensagem {
+            margin-top: 20px;
+            padding: 12px;
+            border-radius: 12px;
+            display: none;
+            text-align: center;
+        }
+
+        .sucesso {
+            background: #d4edda;
+            color: #155724;
+            display: block;
+        }
+
+        .erro {
+            background: #f8d7da;
+            color: #721c24;
+            display: block;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .horarios-grid {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 8px;
+            }
+
+            .horario-btn {
+                padding: 10px 5px;
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🗓️ Novo Agendamento</h1>
+            <p>Preencha os dados para agendar</p>
+        </div>
+
+        <div class="content">
+            <form id="agendaForm">
+                <div class="form-group">
+                    <label>Nome completo *</label>
+                    <input type="text" id="nome" required placeholder="Digite o nome">
+                </div>
+                <div class="form-group">
+                    <label>Telefone/WhatsApp *</label>
+                    <input type="tel" id="telefone" required placeholder="(99) 99999-9999">
+                </div>
+                <div class="form-group">
+                    <label>Serviço *</label>
+                    <select id="servico" required>
+                        <option value="">Selecione...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Data *</label>
+                    <input type="date" id="data" required>
+                </div>
+                <div class="form-group">
+                    <label>Horário *</label>
+                    <div id="horariosContainer" class="horarios-grid"></div>
+                    <input type="hidden" id="hora">
+                </div>
+                <button type="submit">✅ Confirmar Agendamento</button>
+                <button type="button" class="btn-voltar" onclick="window.location.href='dashboard-barbearia.html'">←
+                    Voltar</button>
+            </form>
+
+            <div id="mensagem" class="mensagem"></div>
+            <div id="loading" class="loading">
+                <div class="spinner"></div>
+                <p>Processando...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3000/api';
+
+        const barbearia = JSON.parse(localStorage.getItem('barbearia'));
+        if (!barbearia) {
+            window.location.href = 'login-barbearia.html';
+        }
+
+        async function fetchAPI(endpoint, options = {}) {
+            const defaultOptions = {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'barbearia-id': barbearia.id,
+                    'Authorization': barbearia.token
+                }
+            };
+
+            const response = await fetch(`${API_URL}${endpoint}`, {
+                ...defaultOptions,
+                ...options,
+                headers: { ...defaultOptions.headers, ...options.headers }
+            });
+
+            if (response.status === 403) {
+                alert('Seu período de teste expirou!');
+                window.location.href = 'planos.html';
+            }
+
+            return response;
+        }
+
+        let servicosLista = [];
+
+        function gerarHorarios() {
+            const horarios = [];
+            for (let i = 9; i <= 19; i++) {
+                horarios.push(`${i.toString().padStart(2, '0')}:00`);
+                if (i !== 19) horarios.push(`${i.toString().padStart(2, '0')}:30`);
+            }
+            return horarios;
+        }
+
+        async function carregarServicos() {
+            const response = await fetchAPI('/servicos');
+            servicosLista = await response.json();
+            const select = document.getElementById('servico');
+            servicosLista.forEach(s => {
+                const option = document.createElement('option');
+                option.value = JSON.stringify({ nome: s.nome, preco: s.preco });
+                option.textContent = `${s.nome} - R$ ${s.preco}`;
+                select.appendChild(option);
+            });
+        }
+
+        async function verificarHorariosOcupados(data) {
+            const response = await fetchAPI(`/agendamentos?data=${data}`);
+            const agendamentos = await response.json();
+            return agendamentos.map(a => a.hora);
+        }
+
+        async function atualizarHorarios() {
+            const data = document.getElementById('data').value;
+            const container = document.getElementById('horariosContainer');
+            const horaInput = document.getElementById('hora');
+
+            if (!data) {
+                container.innerHTML = '<div style="grid-column: span 4; text-align: center; padding: 20px;">Selecione uma data</div>';
+                return;
+            }
+
+            container.innerHTML = '<div style="grid-column: span 4; text-align: center; padding: 20px;">Carregando...</div>';
+
+            const ocupados = await verificarHorariosOcupados(data);
+            const todosHorarios = gerarHorarios();
+
+            container.innerHTML = '';
+            todosHorarios.forEach(horario => {
+                const btn = document.createElement('div');
+                btn.className = 'horario-btn';
+                btn.textContent = horario;
+
+                if (ocupados.includes(horario)) {
+                    btn.classList.add('ocupado');
+                } else {
+                    btn.onclick = () => {
+                        document.querySelectorAll('.horario-btn').forEach(b => b.classList.remove('selecionado'));
+                        btn.classList.add('selecionado');
+                        horaInput.value = horario;
+                    };
+                }
+                container.appendChild(btn);
+            });
+        }
+
+        document.getElementById('agendaForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const hora = document.getElementById('hora').value;
+            if (!hora) {
+                mostrarMensagem('Selecione um horário!', 'erro');
+                return;
+            }
+
+            const servicoSelecionado = JSON.parse(document.getElementById('servico').value);
+
+            const dados = {
+                nome: document.getElementById('nome').value,
+                telefone: document.getElementById('telefone').value,
+                servico: servicoSelecionado.nome,
+                preco: servicoSelecionado.preco,
+                data: document.getElementById('data').value,
+                hora: hora
+            };
+
+            document.getElementById('loading').classList.add('show');
+
+            try {
+                const response = await fetchAPI('/agendamentos', {
+                    method: 'POST',
+                    body: JSON.stringify(dados)
+                });
+
+                const resultado = await response.json();
+
+                if (response.ok) {
+                    mostrarMensagem(resultado.mensagem, 'sucesso');
+                    setTimeout(() => {
+                        window.location.href = 'dashboard-barbearia.html?sucesso=1';
+                    }, 1500);
+                } else {
+                    mostrarMensagem(resultado.erro, 'erro');
+                    await atualizarHorarios();
+                }
+            } catch (error) {
+                mostrarMensagem('Erro ao conectar com o servidor', 'erro');
+            } finally {
+                document.getElementById('loading').classList.remove('show');
+            }
+        });
+
+        function mostrarMensagem(msg, tipo) {
+            const div = document.getElementById('mensagem');
+            div.textContent = msg;
+            div.className = `mensagem ${tipo}`;
+            setTimeout(() => div.className = 'mensagem', 3000);
+        }
+
+        document.getElementById('data').addEventListener('change', () => {
+            document.getElementById('hora').value = '';
+            atualizarHorarios();
+        });
+
+        document.getElementById('data').min = new Date().toISOString().split('T')[0];
+
+        carregarServicos();
+    </script>
+</body>
+
+</html>

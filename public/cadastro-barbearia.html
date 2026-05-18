@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="pt">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastre sua Empresa - Trial 14 dias Grátis</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 24px;
+            max-width: 500px;
+            width: 100%;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .logo {
+            text-align: center;
+            font-size: 3em;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .trial-badge {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            text-align: center;
+            padding: 12px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        input {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 16px;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .mensagem {
+            margin-top: 20px;
+            padding: 12px;
+            border-radius: 12px;
+            display: none;
+            text-align: center;
+        }
+
+        .sucesso {
+            background: #d4edda;
+            color: #155724;
+            display: block;
+        }
+
+        .erro {
+            background: #f8d7da;
+            color: #721c24;
+            display: block;
+        }
+
+        .login-link {
+            text-align: center;
+            margin-top: 20px;
+            color: #666;
+        }
+
+        .login-link a {
+            color: #667eea;
+            text-decoration: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="logo">📋</div>
+        <h1>Cadastre sua Empresa</h1>
+        <p class="subtitle">Sistema de gestão completo</p>
+
+        <div class="trial-badge">
+            🎁 14 DIAS GRÁTIS - Sem compromisso!
+        </div>
+
+        <form id="cadastroForm">
+            <div class="form-group">
+                <label>Nome da Empresa *</label>
+                <input type="text" id="nome" required placeholder="Ex: Barbearia Estilo, Spa Julia">
+            </div>
+            <div class="form-group">
+                <label>E-mail *</label>
+                <input type="email" id="email" required placeholder="contato@barbearia.com">
+            </div>
+            <div class="form-group">
+                <label>Senha *</label>
+                <input type="password" id="senha" required placeholder="Crie uma senha">
+            </div>
+            <div class="form-group">
+                <label>Telefone</label>
+                <input type="tel" id="telefone" placeholder="(11) 99999-9999">
+            </div>
+            <div class="form-group">
+                <label>CNPJ (opcional)</label>
+                <input type="text" id="cnpj" placeholder="99.999.999/0001-99">
+            </div>
+            <button type="submit">🎉 Iniciar Trial Grátis</button>
+        </form>
+
+        <div id="mensagem" class="mensagem"></div>
+
+        <div class="login-link">
+            Já tem cadastro? <a href="login-barbearia.html">Fazer login</a>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3000/api';
+
+        document.getElementById('cadastroForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const dados = {
+                nome: document.getElementById('nome').value,
+                email: document.getElementById('email').value,
+                senha: document.getElementById('senha').value,
+                telefone: document.getElementById('telefone').value,
+                cnpj: document.getElementById('cnpj').value
+            };
+
+            try {
+                const response = await fetch(`${API_URL}/cadastrar-barbearia`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(dados)
+                });
+
+                const resultado = await response.json();
+                const msgDiv = document.getElementById('mensagem');
+
+                if (response.ok) {
+                    msgDiv.textContent = resultado.mensagem;
+                    msgDiv.className = 'mensagem sucesso';
+                    setTimeout(() => {
+                        window.location.href = 'login-barbearia.html';
+                    }, 2000);
+                } else {
+                    msgDiv.textContent = resultado.erro;
+                    msgDiv.className = 'mensagem erro';
+                }
+            } catch (error) {
+                document.getElementById('mensagem').textContent = 'Erro ao conectar com o servidor';
+                document.getElementById('mensagem').className = 'mensagem erro';
+            }
+        });
+    </script>
+</body>
+
+</html>

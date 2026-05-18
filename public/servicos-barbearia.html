@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="pt">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Serviços - Meu Negócio</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            padding: 16px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ff8e53 100%);
+            color: white;
+            padding: 24px 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 1.6em;
+            margin-bottom: 4px;
+        }
+
+        .header p {
+            font-size: 0.85em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 24px 20px;
+        }
+
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .btn-novo {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .servicos-list {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .servico-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            border-bottom: 1px solid #eee;
+            transition: background 0.2s;
+        }
+
+        .servico-item:hover {
+            background: #f8f9fa;
+        }
+
+        .servico-info {
+            flex: 1;
+        }
+
+        .servico-nome {
+            font-weight: 600;
+            font-size: 1em;
+            margin-bottom: 4px;
+        }
+
+        .servico-preco {
+            color: #28a745;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .servico-duracao {
+            color: #666;
+            font-size: 0.75em;
+            margin-top: 4px;
+        }
+
+        .servico-descricao {
+            color: #999;
+            font-size: 0.75em;
+            margin-top: 2px;
+        }
+
+        .servico-acoes {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn-editar-servico,
+        .btn-excluir-servico {
+            background: none;
+            border: none;
+            font-size: 1.2em;
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 8px;
+        }
+
+        .btn-editar-servico {
+            color: #17a2b8;
+        }
+
+        .btn-excluir-servico {
+            color: #dc3545;
+        }
+
+        .btn-voltar {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 12px;
+            width: 100%;
+            margin-top: 20px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 16px;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 24px;
+            max-width: 500px;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ff8e53 100%);
+            color: white;
+            padding: 20px;
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 14px;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 12px;
+            padding: 20px 24px;
+            border-top: 1px solid #eee;
+        }
+
+        .btn-salvar {
+            flex: 1;
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-cancelar {
+            flex: 1;
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #28a745;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 40px;
+            z-index: 1100;
+            animation: slideUp 0.3s ease;
+        }
+
+        .toast.erro {
+            background: #dc3545;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateX(-50%) translateY(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(-50%) translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px;
+            color: #999;
+        }
+
+        @media (max-width: 480px) {
+            .top-bar {
+                flex-direction: column;
+            }
+
+            .btn-novo {
+                width: 100%;
+                text-align: center;
+            }
+
+            .servico-item {
+                flex-direction: column;
+                text-align: center;
+                gap: 10px;
+            }
+
+            .servico-acoes {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛠️ Meus Serviços</h1>
+            <p>Gerencie os serviços que você oferece</p>
+        </div>
+
+        <div class="content">
+            <div class="top-bar">
+                <h2 style="font-size: 1.2em;">📋 Lista de Serviços</h2>
+                <button class="btn-novo" onclick="abrirModalNovo()">➕ Novo Serviço</button>
+            </div>
+
+            <div id="servicosList">
+                <div class="loading" style="text-align: center; padding: 40px;">
+                    <div class="spinner"
+                        style="border: 3px solid #f0f0f0; border-top: 3px solid #ff6b6b; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 10px;">
+                    </div>
+                    <p>Carregando...</p>
+                </div>
+            </div>
+
+            <button class="btn-voltar" onclick="window.location.href='dashboard-barbearia.html'">← Voltar ao
+                Dashboard</button>
+        </div>
+    </div>
+
+    <!-- Modal de Serviço -->
+    <div id="servicoModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">➕ Novo Serviço</h3>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Nome do Serviço *</label>
+                    <input type="text" id="servicoNome" placeholder="Ex: Corte de Cabelo, Limpeza de Pele, Massagem...">
+                </div>
+                <div class="form-group">
+                    <label>Descrição (opcional)</label>
+                    <textarea id="servicoDescricao" placeholder="Detalhes do serviço..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Preço * (R$)</label>
+                    <input type="number" id="servicoPreco" step="0.01" placeholder="0,00">
+                </div>
+                <div class="form-group">
+                    <label>Duração (minutos)</label>
+                    <select id="servicoDuracao">
+                        <option value="15">15 minutos</option>
+                        <option value="30" selected>30 minutos</option>
+                        <option value="45">45 minutos</option>
+                        <option value="60">1 hora</option>
+                        <option value="90">1 hora e 30 minutos</option>
+                        <option value="120">2 horas</option>
+                        <option value="180">3 horas</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancelar" onclick="fecharModal()">Cancelar</button>
+                <button class="btn-salvar" onclick="salvarServico()">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3000/api';
+        const barbearia = JSON.parse(localStorage.getItem('barbearia'));
+
+        if (!barbearia) {
+            window.location.href = 'login-barbearia.html';
+        }
+
+        let servicos = [];
+        let servicoEditandoId = null;
+
+        async function fetchAPI(endpoint, options = {}) {
+            const defaultOptions = {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'barbearia-id': barbearia.id,
+                    'Authorization': barbearia.token
+                }
+            };
+
+            const response = await fetch(`${API_URL}${endpoint}`, {
+                ...defaultOptions,
+                ...options,
+                headers: { ...defaultOptions.headers, ...options.headers }
+            });
+
+            if (response.status === 403) {
+                alert('Sessão expirada!');
+                window.location.href = 'login-barbearia.html';
+            }
+
+            return response;
+        }
+
+        async function carregarServicos() {
+            try {
+                const response = await fetchAPI('/servicos');
+                servicos = await response.json();
+                exibirServicos();
+            } catch (error) {
+                console.error('Erro:', error);
+                document.getElementById('servicosList').innerHTML = `
+                    <div class="empty-state">
+                        ❌ Erro ao carregar serviços
+                        <button onclick="carregarServicos()" style="margin-top: 10px; padding: 8px 16px;">Tentar novamente</button>
+                    </div>
+                `;
+            }
+        }
+
+        function exibirServicos() {
+            const container = document.getElementById('servicosList');
+
+            if (!servicos || servicos.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        📭 Nenhum serviço cadastrado ainda
+                        <button class="btn-novo" onclick="abrirModalNovo()" style="margin-top: 15px; display: inline-block; width: auto;">➕ Criar primeiro serviço</button>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="servicos-list">
+                    ${servicos.map(servico => `
+                        <div class="servico-item">
+                            <div class="servico-info">
+                                <div class="servico-nome">${escapeHtml(servico.nome)}</div>
+                                <div class="servico-preco">💰 R$ ${servico.preco.toFixed(2)}</div>
+                                <div class="servico-duracao">⏱️ ${servico.duracao} minutos</div>
+                                ${servico.descricao ? `<div class="servico-descricao">📝 ${escapeHtml(servico.descricao)}</div>` : ''}
+                            </div>
+                            <div class="servico-acoes">
+                                <button class="btn-editar-servico" onclick="abrirModalEditar(${servico.id})" title="Editar">✏️</button>
+                                <button class="btn-excluir-servico" onclick="excluirServico(${servico.id}, '${escapeHtml(servico.nome)}')" title="Excluir">🗑️</button>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        function abrirModalNovo() {
+            servicoEditandoId = null;
+            document.getElementById('modalTitle').textContent = '➕ Novo Serviço';
+            document.getElementById('servicoNome').value = '';
+            document.getElementById('servicoDescricao').value = '';
+            document.getElementById('servicoPreco').value = '';
+            document.getElementById('servicoDuracao').value = '30';
+            document.getElementById('servicoModal').classList.add('show');
+        }
+
+        function abrirModalEditar(id) {
+            const servico = servicos.find(s => s.id === id);
+            if (servico) {
+                servicoEditandoId = id;
+                document.getElementById('modalTitle').textContent = '✏️ Editar Serviço';
+                document.getElementById('servicoNome').value = servico.nome;
+                document.getElementById('servicoDescricao').value = servico.descricao || '';
+                document.getElementById('servicoPreco').value = servico.preco;
+                document.getElementById('servicoDuracao').value = servico.duracao;
+                document.getElementById('servicoModal').classList.add('show');
+            }
+        }
+
+        async function salvarServico() {
+            const nome = document.getElementById('servicoNome').value.trim();
+            const descricao = document.getElementById('servicoDescricao').value.trim();
+            const preco = parseFloat(document.getElementById('servicoPreco').value);
+            const duracao = parseInt(document.getElementById('servicoDuracao').value);
+
+            if (!nome) {
+                mostrarToast('Digite o nome do serviço!', true);
+                return;
+            }
+
+            if (isNaN(preco) || preco <= 0) {
+                mostrarToast('Digite um preço válido!', true);
+                return;
+            }
+
+            const dados = { nome, descricao, preco, duracao };
+
+            try {
+                let response;
+                if (servicoEditandoId) {
+                    response = await fetchAPI(`/servicos/${servicoEditandoId}`, {
+                        method: 'PUT',
+                        body: JSON.stringify(dados)
+                    });
+                } else {
+                    response = await fetchAPI('/servicos', {
+                        method: 'POST',
+                        body: JSON.stringify(dados)
+                    });
+                }
+
+                const resultado = await response.json();
+
+                if (response.ok) {
+                    mostrarToast(servicoEditandoId ? '✅ Serviço atualizado!' : '✅ Serviço criado!');
+                    fecharModal();
+                    carregarServicos();
+                } else {
+                    mostrarToast(resultado.erro || 'Erro ao salvar', true);
+                }
+            } catch (error) {
+                mostrarToast('Erro ao conectar', true);
+            }
+        }
+
+        async function excluirServico(id, nome) {
+            if (confirm(`Tem certeza que deseja excluir "${nome}"?\n\nOs agendamentos com este serviço serão afetados.`)) {
+                try {
+                    const response = await fetchAPI(`/servicos/${id}`, {
+                        method: 'DELETE'
+                    });
+
+                    const resultado = await response.json();
+
+                    if (response.ok) {
+                        mostrarToast('✅ Serviço excluído!');
+                        carregarServicos();
+                    } else {
+                        mostrarToast(resultado.erro || 'Erro ao excluir', true);
+                    }
+                } catch (error) {
+                    mostrarToast('Erro ao conectar', true);
+                }
+            }
+        }
+
+        function fecharModal() {
+            document.getElementById('servicoModal').classList.remove('show');
+            servicoEditandoId = null;
+        }
+
+        function mostrarToast(mensagem, erro = false) {
+            const toast = document.createElement('div');
+            toast.className = `toast ${erro ? 'erro' : ''}`;
+            toast.textContent = mensagem;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Fechar modal ao clicar fora
+        document.getElementById('servicoModal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('servicoModal')) {
+                fecharModal();
+            }
+        });
+
+        carregarServicos();
+    </script>
+</body>
+
+</html>

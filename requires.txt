@@ -1,0 +1,23 @@
+Reinicie o servidor:
+
+bash
+node server.js
+Cadastre uma barbearia:
+
+text
+http://localhost:3000/cadastro-barbearia.html
+Faça login:
+
+text
+http://localhost:3000/login-barbearia.html
+Agora a Dashboard vai funcionar! 🎉
+
+Testa aí e me avisa se funcionou!
+
+Cadastro de barbearia: http://localhost:3000/cadastro-barbearia.html
+🔐 Login da barbearia: http://localhost:3000/login-barbearia.html
+👑 Admin: http://localhost:3000/admin-panel.html
+
+Cadastro de barbearia	/cadastro-barbearia.html	-
+Login da barbearia	/login-barbearia.html	email cadastrado
+Admin (você)	/admin-panel.html	superadmin / admin123

@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="pt">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Cadastro de Clientes - Barbearia Estilo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f5f5f5;
+            padding: 16px;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 24px 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 1.6em;
+            margin-bottom: 4px;
+        }
+
+        .header p {
+            font-size: 0.85em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 24px 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 0.9em;
+        }
+
+        input {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s;
+            -webkit-appearance: none;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #28a745;
+            box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.1);
+        }
+
+        button[type="submit"] {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s;
+        }
+
+        button[type="submit"]:active {
+            transform: scale(0.98);
+        }
+
+        .btn-voltar {
+            background: #6c757d;
+            margin-top: 12px;
+        }
+
+        .mensagem {
+            margin-top: 20px;
+            padding: 12px;
+            border-radius: 12px;
+            display: none;
+            font-size: 0.9em;
+            text-align: center;
+        }
+
+        .sucesso {
+            background: #d4edda;
+            color: #155724;
+            display: block;
+        }
+
+        .erro {
+            background: #f8d7da;
+            color: #721c24;
+            display: block;
+        }
+
+        .lista-clientes {
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 2px solid #eee;
+        }
+
+        .lista-clientes h3 {
+            font-size: 1.1em;
+            margin-bottom: 16px;
+            color: #333;
+        }
+
+        .cliente-item {
+            background: #f8f9fa;
+            padding: 14px;
+            margin-bottom: 10px;
+            border-radius: 12px;
+            border-left: 4px solid #28a745;
+        }
+
+        .cliente-nome {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .cliente-info {
+            color: #666;
+            font-size: 0.8em;
+            margin-top: 6px;
+            word-break: break-all;
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 12px;
+            }
+
+            .header {
+                padding: 20px 16px;
+            }
+
+            .header h1 {
+                font-size: 1.4em;
+            }
+
+            .content {
+                padding: 20px 16px;
+            }
+
+            .cliente-info {
+                font-size: 0.75em;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📝 Cadastro de Clientes</h1>
+            <p>Cadastre clientes para oferecer benefícios</p>
+        </div>
+
+        <div class="content">
+            <form id="cadastroForm">
+                <div class="form-group">
+                    <label>Nome completo *</label>
+                    <input type="text" id="nome" required placeholder="Digite o nome completo">
+                </div>
+                <div class="form-group">
+                    <label>E-mail *</label>
+                    <input type="email" id="email" required placeholder="cliente@email.com">
+                </div>
+                <div class="form-group">
+                    <label>Telefone/WhatsApp *</label>
+                    <input type="tel" id="telefone" required placeholder="(99) 99999-9999">
+                </div>
+                <button type="submit">✅ Cadastrar Cliente</button>
+                <button type="button" class="btn-voltar" onclick="window.location.href='dashboard.html'">← Voltar ao
+                    Dashboard</button>
+            </form>
+
+            <div id="mensagem" class="mensagem"></div>
+
+            <div class="lista-clientes">
+                <h3>👥 Últimos Clientes</h3>
+                <div id="listaClientes"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3000/api';
+
+        async function carregarClientes() {
+            const response = await fetch(`${API_URL}/clientes`);
+            const clientes = await response.json();
+            const lista = document.getElementById('listaClientes');
+
+            if (clientes.length === 0) {
+                lista.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">Nenhum cliente cadastrado</p>';
+                return;
+            }
+
+            lista.innerHTML = clientes.slice(0, 5).map(c => `
+                <div class="cliente-item">
+                    <div class="cliente-nome">${c.nome}</div>
+                    <div class="cliente-info">📧 ${c.email} | 📱 ${c.telefone}</div>
+                </div>
+            `).join('');
+        }
+
+        document.getElementById('cadastroForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const dados = {
+                nome: document.getElementById('nome').value,
+                email: document.getElementById('email').value,
+                telefone: document.getElementById('telefone').value
+            };
+
+            try {
+                const response = await fetch(`${API_URL}/clientes`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(dados)
+                });
+
+                const resultado = await response.json();
+                const msgDiv = document.getElementById('mensagem');
+
+                if (response.ok) {
+                    msgDiv.textContent = resultado.mensagem;
+                    msgDiv.className = 'mensagem sucesso';
+                    document.getElementById('cadastroForm').reset();
+                    carregarClientes();
+                    setTimeout(() => msgDiv.className = 'mensagem', 3000);
+                } else {
+                    msgDiv.textContent = resultado.erro;
+                    msgDiv.className = 'mensagem erro';
+                    setTimeout(() => msgDiv.className = 'mensagem', 3000);
+                }
+            } catch (error) {
+                msgDiv.textContent = 'Erro ao conectar com o servidor';
+                msgDiv.className = 'mensagem erro';
+            }
+        });
+
+        carregarClientes();
+
+        if (!localStorage.getItem('usuario')) {
+            window.location.href = '/';
+        }
+    </script>
+</body>
+
+</html>

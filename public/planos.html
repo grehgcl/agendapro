@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="pt">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planos - Barbearia Estilo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+            font-size: 2.5em;
+        }
+
+        .planos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .plano-card {
+            background: white;
+            border-radius: 24px;
+            padding: 30px;
+            text-align: center;
+            transition: transform 0.3s;
+            cursor: pointer;
+        }
+
+        .plano-card:hover {
+            transform: translateY(-10px);
+        }
+
+        .plano-card.popular {
+            border: 3px solid #ffc107;
+            position: relative;
+        }
+
+        .popular-badge {
+            position: absolute;
+            top: -12px;
+            right: 20px;
+            background: #ffc107;
+            color: #333;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+
+        .plano-nome {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .plano-preco {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+
+        .plano-preco small {
+            font-size: 0.4em;
+            color: #999;
+        }
+
+        .plano-descricao {
+            color: #666;
+            margin-bottom: 30px;
+            line-height: 1.5;
+        }
+
+        .btn-assinar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 30px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .info {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            color: #333;
+        }
+
+        .btn-voltar {
+            background: #6c757d;
+            margin-top: 20px;
+            padding: 12px 30px;
+            border-radius: 30px;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>✂️ Escolha o Melhor Plano</h1>
+
+        <div class="planos-grid" id="planosGrid">
+            <div class="loading">Carregando planos...</div>
+        </div>
+
+        <div class="info">
+            <p>✅ Pagamento seguro via PIX ou Cartão</p>
+            <p>✅ Cancele quando quiser</p>
+            <p>✅ Suporte 24/7</p>
+        </div>
+
+        <div style="text-align: center;">
+            <button class="btn-voltar" onclick="window.location.href='dashboard-barbearia.html'">← Voltar</button>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3000/api';
+        const barbearia = JSON.parse(localStorage.getItem('barbearia'));
+
+        async function carregarPlanos() {
+            const response = await fetch(`${API_URL}/planos`);
+            const planos = await response.json();
+
+            const grid = document.getElementById('planosGrid');
+
+            grid.innerHTML = planos.map((plano, index) => `
+                <div class="plano-card ${index === 0 ? 'popular' : ''}">
+                    ${index === 0 ? '<div class="popular-badge">🔥 MAIS POPULAR</div>' : ''}
+                    <div class="plano-nome">${plano.nome}</div>
+                    <div class="plano-preco">
+                        R$ ${plano.preco.toFixed(2)}
+                        <small>/mês</small>
+                    </div>
+                    <div class="plano-descricao">${plano.descricao}</div>
+                    <button class="btn-assinar" onclick="assinarPlano('${plano.id}', ${plano.preco})">
+                        Assinar Agora
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        async function assinarPlano(planoId, valor) {
+            if (!barbearia) {
+                window.location.href = 'login-barbearia.html';
+                return;
+            }
+
+            if (confirm(`Confirmar assinatura do plano por R$ ${valor.toFixed(2)}?`)) {
+                try {
+                    const response = await fetch(`${API_URL}/renovar-assinatura`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'barbearia-id': barbearia.id,
+                            'Authorization': barbearia.token
+                        },
+                        body: JSON.stringify({ plano_id: planoId, valor: valor })
+                    });
+
+                    const resultado = await response.json();
+
+                    if (response.ok) {
+                        alert(resultado.mensagem);
+                        localStorage.removeItem('barbearia');
+                        window.location.href = 'login-barbearia.html';
+                    } else {
+                        alert(resultado.erro);
+                    }
+                } catch (error) {
+                    alert('Erro ao processar pagamento');
+                }
+            }
+        }
+
+        carregarPlanos();
+
+        if (barbearia && barbearia.dias_restantes > 0) {
+            console.log(`Dias restantes: ${barbearia.dias_restantes}`);
+        }
+    </script>
+</body>
+
+</html>
