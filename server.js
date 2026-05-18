@@ -17,6 +17,7 @@ console.log(`🚀 Iniciando servidor em modo: ${USE_POSTGRES ? 'PRODUÇÃO (Post
 
 let db;
 let getBarbeariaDb;
+let criarBancoBarbeariaSqlite; // Declarar aqui para escopo global
 
 if (USE_POSTGRES) {
     // ============= POSTGRESQL (RENDER) =============
@@ -37,55 +38,55 @@ if (USE_POSTGRES) {
     async function initPostgres() {
         try {
             await pool.query(`
-        CREATE TABLE IF NOT EXISTS barbearias (
-          id SERIAL PRIMARY KEY,
-          nome TEXT NOT NULL,
-          cnpj TEXT,
-          telefone TEXT,
-          email TEXT UNIQUE NOT NULL,
-          senha TEXT NOT NULL,
-          plano TEXT DEFAULT 'trial',
-          data_expiracao TIMESTAMP,
-          status TEXT DEFAULT 'ativo',
-          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-      `);
+                CREATE TABLE IF NOT EXISTS barbearias (
+                    id SERIAL PRIMARY KEY,
+                    nome TEXT NOT NULL,
+                    cnpj TEXT,
+                    telefone TEXT,
+                    email TEXT UNIQUE NOT NULL,
+                    senha TEXT NOT NULL,
+                    plano TEXT DEFAULT 'trial',
+                    data_expiracao TIMESTAMP,
+                    status TEXT DEFAULT 'ativo',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            `);
 
             await pool.query(`
-        CREATE TABLE IF NOT EXISTS agendamentos (
-          id SERIAL PRIMARY KEY,
-          barbearia_id INTEGER NOT NULL,
-          nome TEXT NOT NULL,
-          servico TEXT NOT NULL,
-          preco REAL NOT NULL,
-          data DATE NOT NULL,
-          hora TEXT NOT NULL,
-          telefone TEXT,
-          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-      `);
+                CREATE TABLE IF NOT EXISTS agendamentos (
+                    id SERIAL PRIMARY KEY,
+                    barbearia_id INTEGER NOT NULL,
+                    nome TEXT NOT NULL,
+                    servico TEXT NOT NULL,
+                    preco REAL NOT NULL,
+                    data DATE NOT NULL,
+                    hora TEXT NOT NULL,
+                    telefone TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            `);
 
             await pool.query(`
-        CREATE TABLE IF NOT EXISTS clientes (
-          id SERIAL PRIMARY KEY,
-          barbearia_id INTEGER NOT NULL,
-          nome TEXT NOT NULL,
-          email TEXT,
-          telefone TEXT,
-          data_cadastro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-      `);
+                CREATE TABLE IF NOT EXISTS clientes (
+                    id SERIAL PRIMARY KEY,
+                    barbearia_id INTEGER NOT NULL,
+                    nome TEXT NOT NULL,
+                    email TEXT,
+                    telefone TEXT,
+                    data_cadastro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            `);
 
             await pool.query(`
-        CREATE TABLE IF NOT EXISTS servicos (
-          id SERIAL PRIMARY KEY,
-          barbearia_id INTEGER NOT NULL,
-          nome TEXT NOT NULL,
-          descricao TEXT,
-          preco REAL NOT NULL,
-          duracao INTEGER DEFAULT 30
-        )
-      `);
+                CREATE TABLE IF NOT EXISTS servicos (
+                    id SERIAL PRIMARY KEY,
+                    barbearia_id INTEGER NOT NULL,
+                    nome TEXT NOT NULL,
+                    descricao TEXT,
+                    preco REAL NOT NULL,
+                    duracao INTEGER DEFAULT 30
+                )
+            `);
 
             console.log('✅ Tabelas PostgreSQL criadas/verificadas');
         } catch (error) {
@@ -102,37 +103,37 @@ if (USE_POSTGRES) {
     db = sqliteDb;
 
     // Criar banco para cada barbearia no SQLite
-    function criarBancoBarbeariaSqlite(barbeariaId) {
+    criarBancoBarbeariaSqlite = (barbeariaId) => {
         const dbPath = `barbearia_${barbeariaId}.db`;
         const barbDb = new sqlite3.Database(dbPath);
 
         barbDb.serialize(() => {
             barbDb.run(`CREATE TABLE IF NOT EXISTS agendamentos (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nome TEXT NOT NULL,
-        servico TEXT NOT NULL,
-        preco REAL NOT NULL,
-        data TEXT NOT NULL,
-        hora TEXT NOT NULL,
-        telefone TEXT,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      )`);
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                nome TEXT NOT NULL,
+                servico TEXT NOT NULL,
+                preco REAL NOT NULL,
+                data TEXT NOT NULL,
+                hora TEXT NOT NULL,
+                telefone TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )`);
 
             barbDb.run(`CREATE TABLE IF NOT EXISTS clientes (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nome TEXT NOT NULL,
-        email TEXT,
-        telefone TEXT,
-        data_cadastro DATETIME DEFAULT CURRENT_TIMESTAMP
-      )`);
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                nome TEXT NOT NULL,
+                email TEXT,
+                telefone TEXT,
+                data_cadastro DATETIME DEFAULT CURRENT_TIMESTAMP
+            )`);
 
             barbDb.run(`CREATE TABLE IF NOT EXISTS servicos (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nome TEXT NOT NULL,
-        descricao TEXT,
-        preco REAL NOT NULL,
-        duracao INTEGER DEFAULT 30
-      )`);
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                nome TEXT NOT NULL,
+                descricao TEXT,
+                preco REAL NOT NULL,
+                duracao INTEGER DEFAULT 30
+            )`);
 
             // Inserir serviços padrão
             barbDb.get("SELECT COUNT(*) as total FROM servicos", (err, row) => {
@@ -149,7 +150,7 @@ if (USE_POSTGRES) {
             });
         });
         return barbDb;
-    }
+    };
 
     getBarbeariaDb = (barbeariaId) => {
         return new sqlite3.Database(`barbearia_${barbeariaId}.db`);
@@ -158,17 +159,17 @@ if (USE_POSTGRES) {
     // Criar tabelas no SQLite
     sqliteDb.serialize(() => {
         sqliteDb.run(`CREATE TABLE IF NOT EXISTS barbearias (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      nome TEXT NOT NULL,
-      cnpj TEXT,
-      telefone TEXT,
-      email TEXT UNIQUE NOT NULL,
-      senha TEXT NOT NULL,
-      plano TEXT DEFAULT 'trial',
-      data_expiracao DATETIME,
-      status TEXT DEFAULT 'ativo',
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )`);
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nome TEXT NOT NULL,
+            cnpj TEXT,
+            telefone TEXT,
+            email TEXT UNIQUE NOT NULL,
+            senha TEXT NOT NULL,
+            plano TEXT DEFAULT 'trial',
+            data_expiracao DATETIME,
+            status TEXT DEFAULT 'ativo',
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )`);
         console.log('✅ Tabelas SQLite criadas/verificadas');
     });
 }
@@ -220,37 +221,63 @@ async function verificarAcesso(req, res, next) {
 app.post('/api/cadastrar-barbearia', async (req, res) => {
     const { nome, email, senha, telefone, cnpj } = req.body;
 
+    console.log('📝 Recebendo cadastro:', { nome, email, telefone, cnpj });
+
     if (!nome || !email || !senha) {
         return res.status(400).json({ erro: 'Nome, email e senha são obrigatórios!' });
     }
 
     try {
-        const existente = await executarQuery(db, 'SELECT id FROM barbearias WHERE email = ?', [email]);
-        if (existente.rows.length > 0) {
+        // Verificar se email já existe
+        let existe = false;
+        if (USE_POSTGRES) {
+            const result = await db.query('SELECT id FROM barbearias WHERE email = $1', [email]);
+            existe = result.rows.length > 0;
+        } else {
+            const result = await executarQuery(db, 'SELECT id FROM barbearias WHERE email = ?', [email]);
+            existe = result.rows.length > 0;
+        }
+
+        if (existe) {
             return res.status(400).json({ erro: 'Este email já está cadastrado!' });
         }
 
         const dataExpiracao = new Date();
         dataExpiracao.setDate(dataExpiracao.getDate() + 14);
 
-        const result = await executarRun(db,
-            `INSERT INTO barbearias (nome, email, senha, telefone, cnpj, data_expiracao) VALUES (?, ?, ?, ?, ?, ?)`,
-            [nome, email, senha, telefone || '', cnpj || '', dataExpiracao.toISOString()]
-        );
+        let barbeariaId;
 
-        const barbeariaId = result.lastID;
+        if (USE_POSTGRES) {
+            const result = await db.query(
+                `INSERT INTO barbearias (nome, email, senha, telefone, cnpj, data_expiracao) 
+                 VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+                [nome, email, senha, telefone || '', cnpj || '', dataExpiracao]
+            );
+            barbeariaId = result.rows[0].id;
+        } else {
+            const result = await executarRun(db,
+                `INSERT INTO barbearias (nome, email, senha, telefone, cnpj, data_expiracao) 
+                 VALUES (?, ?, ?, ?, ?, ?)`,
+                [nome, email, senha, telefone || '', cnpj || '', dataExpiracao.toISOString()]
+            );
+            barbeariaId = result.lastID;
 
-        if (!USE_POSTGRES) {
-            criarBancoBarbeariaSqlite(barbeariaId);
+            // Criar banco da barbearia no SQLite
+            if (criarBancoBarbeariaSqlite) {
+                criarBancoBarbeariaSqlite(barbeariaId);
+            }
         }
+
+        console.log('✅ Cadastro realizado! ID:', barbeariaId);
 
         res.json({
             id: barbeariaId,
-            mensagem: '✅ Cadastrado com sucesso! Trial de 14 dias.'
+            mensagem: '✅ Cadastrado com sucesso! Trial de 14 dias.',
+            data_expiracao: dataExpiracao.toISOString()
         });
     } catch (error) {
-        console.error('Erro no cadastro:', error);
-        res.status(500).json({ erro: error.message });
+        console.error('❌ Erro no cadastro:', error.message);
+        res.status(500).json({ erro: 'Erro ao cadastrar: ' + error.message });
     }
 });
 
@@ -390,7 +417,7 @@ app.post('/api/agendamentos', verificarAcesso, async (req, res) => {
         if (USE_POSTGRES) {
             await db.query(
                 `INSERT INTO agendamentos (barbearia_id, nome, servico, preco, data, hora, telefone)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+                 VALUES ($1, $2, $3, $4, $5, $6, $7)`,
                 [req.barbeariaId, nome, servico, preco, data, hora, telefone || '']
             );
         } else {
@@ -398,7 +425,7 @@ app.post('/api/agendamentos', verificarAcesso, async (req, res) => {
             await new Promise((resolve, reject) => {
                 barbDb.run(
                     `INSERT INTO agendamentos (nome, servico, preco, data, hora, telefone)
-           VALUES (?, ?, ?, ?, ?, ?)`,
+                     VALUES (?, ?, ?, ?, ?, ?)`,
                     [nome, servico, preco, data, hora, telefone || ''],
                     (err) => {
                         barbDb.close();
@@ -641,7 +668,7 @@ app.get('/api/planos', (req, res) => {
     ]);
 });
 
-// Admin
+// Admin - Listar barbearias
 app.get('/api/admin/barbearias', async (req, res) => {
     const auth = req.headers['authorization'];
     if (auth !== 'admin-token') {
@@ -649,8 +676,119 @@ app.get('/api/admin/barbearias', async (req, res) => {
     }
 
     try {
-        const result = await executarQuery(db, 'SELECT * FROM barbearias ORDER BY id');
+        const result = await executarQuery(db, 'SELECT id, nome, email, telefone, plano, status, data_expiracao FROM barbearias ORDER BY id');
         res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ erro: error.message });
+    }
+});
+
+// Admin - Atualizar barbearia
+app.put('/api/admin/barbearias/:id', async (req, res) => {
+    const auth = req.headers['authorization'];
+    if (auth !== 'admin-token') {
+        return res.status(401).json({ erro: 'Não autorizado' });
+    }
+
+    const { id } = req.params;
+    const { nome, email, senha, plano, telefone, cnpj } = req.body;
+
+    try {
+        let query = 'UPDATE barbearias SET nome = $1, email = $2, telefone = $3, cnpj = $4, plano = $5';
+        let params = [nome, email, telefone || '', cnpj || '', plano];
+
+        if (senha && senha.trim() !== '') {
+            query += ', senha = $6';
+            params.push(senha);
+            query += ' WHERE id = $7';
+        } else {
+            query += ' WHERE id = $6';
+        }
+        params.push(id);
+
+        if (USE_POSTGRES) {
+            // Converter para $n para PostgreSQL
+            const pgQuery = query.replace(/\?/g, (_, i) => `$${i + 1}`);
+            await db.query(pgQuery, params);
+        } else {
+            const sqliteQuery = query.replace(/\$\d/g, '?');
+            await executarRun(db, sqliteQuery, params);
+        }
+
+        res.json({ mensagem: '✅ Barbearia atualizada!' });
+    } catch (error) {
+        res.status(500).json({ erro: error.message });
+    }
+});
+
+// Admin - Excluir barbearia
+app.delete('/api/admin/barbearias/:id', async (req, res) => {
+    const auth = req.headers['authorization'];
+    if (auth !== 'admin-token') {
+        return res.status(401).json({ erro: 'Não autorizado' });
+    }
+
+    const { id } = req.params;
+
+    try {
+        const result = await executarQuery(db, 'SELECT nome FROM barbearias WHERE id = ?', [id]);
+        if (result.rows.length === 0) {
+            return res.status(404).json({ erro: 'Barbearia não encontrada' });
+        }
+
+        await executarRun(db, 'DELETE FROM barbearias WHERE id = ?', [id]);
+
+        if (!USE_POSTGRES) {
+            const dbPath = `barbearia_${id}.db`;
+            if (fs.existsSync(dbPath)) {
+                fs.unlinkSync(dbPath);
+            }
+        }
+
+        res.json({ mensagem: `✅ Barbearia "${result.rows[0].nome}" excluída!` });
+    } catch (error) {
+        res.status(500).json({ erro: error.message });
+    }
+});
+
+// Admin - Alterar status
+app.put('/api/admin/barbearias/:id/status', async (req, res) => {
+    const auth = req.headers['authorization'];
+    if (auth !== 'admin-token') {
+        return res.status(401).json({ erro: 'Não autorizado' });
+    }
+
+    const { id } = req.params;
+    const { status, dias_extras } = req.body;
+
+    try {
+        const result = await executarQuery(db, 'SELECT data_expiracao FROM barbearias WHERE id = ?', [id]);
+        if (result.rows.length === 0) {
+            return res.status(404).json({ erro: 'Barbearia não encontrada' });
+        }
+
+        let query = 'UPDATE barbearias SET status = ?';
+        let params = [status];
+
+        if (dias_extras) {
+            let novaExpiracao = new Date(result.rows[0].data_expiracao);
+            novaExpiracao.setDate(novaExpiracao.getDate() + dias_extras);
+            query += ', data_expiracao = ?';
+            params.push(novaExpiracao.toISOString());
+        }
+
+        query += ' WHERE id = ?';
+        params.push(id);
+
+        if (USE_POSTGRES) {
+            const pgQuery = query.replace(/\?/g, (_, i) => `$${i + 1}`);
+            await db.query(pgQuery, params);
+        } else {
+            const sqliteQuery = query.replace(/\$\d/g, '?');
+            await executarRun(db, sqliteQuery, params);
+        }
+
+        res.json({ mensagem: '✅ Status atualizado!' });
     } catch (error) {
         res.status(500).json({ erro: error.message });
     }
