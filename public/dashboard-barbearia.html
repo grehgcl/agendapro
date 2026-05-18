@@ -642,13 +642,18 @@
         }
 
         function formatarData(dataStr) {
-            const data = new Date(dataStr);
+            // Divide a string da data (YYYY-MM-DD)
+            const partes = dataStr.split('-');
+            const ano = parseInt(partes[0]);
+            const mes = parseInt(partes[1]) - 1; // Mês começa do 0
+            const dia = parseInt(partes[2]);
+
+            const data = new Date(ano, mes, dia);
             const diasSemana = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
             const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
             const diaSemana = diasSemana[data.getDay()];
-            const dia = data.getDate();
-            const mes = meses[data.getMonth()];
-            return `${diaSemana}, ${dia} ${mes}`;
+
+            return `${diaSemana}, ${dia} ${meses[mes]}`;
         }
 
         function gerarHorarios() {

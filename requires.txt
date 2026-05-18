@@ -40,3 +40,18 @@ Render faz novo deploy (2-3 minutos)
 Sistema atualizado no ar! 🚀
 
 https://agendapro.onrender.com
+
+
+cd C:\Users\jonat\Documents\Barbearia
+git add .
+git commit -m "Atualização para AgendaPro multi-segmento"
+git push
+
+
+
+🎯 Acesse as páginas:
+Página	URL
+Página inicial	https://agendapro-77nb.onrender.com
+Login da Barbearia	https://agendapro-77nb.onrender.com/login-barbearia.html
+Cadastro (Trial 14 dias)	https://agendapro-77nb.onrender.com/cadastro-barbearia.html
+Painel Admin	https://agendapro-77nb.onrender.com/admin-panel.html
