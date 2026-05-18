@@ -3,226 +3,65 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>Login - Barbearia Estilo</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgendaPro</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
+            font-family: Arial, sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 16px;
+            height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
         }
 
-        .login-container {
-            background: white;
-            border-radius: 24px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            padding: 32px 24px;
-            max-width: 400px;
-            width: 100%;
+        .container {
             text-align: center;
-            animation: fadeIn 0.5s ease;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .logo {
-            font-size: 4em;
-            margin-bottom: 16px;
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
         }
 
         h1 {
             color: #333;
-            font-size: 1.8em;
-            margin-bottom: 8px;
-        }
-
-        .subtitle {
-            color: #666;
-            margin-bottom: 32px;
-            font-size: 0.9em;
-        }
-
-        .form-group {
             margin-bottom: 20px;
-            text-align: left;
         }
 
-        label {
+        .links a {
             display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #333;
-            font-size: 0.9em;
-        }
-
-        input {
-            width: 100%;
-            padding: 14px;
-            border: 2px solid #e0e0e0;
-            border-radius: 12px;
-            font-size: 16px;
-            transition: all 0.3s;
-            -webkit-appearance: none;
-        }
-
-        input:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-
-        button {
+            margin: 15px 0;
+            padding: 12px 20px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            border: none;
-            padding: 14px;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            width: 100%;
-            transition: transform 0.2s, box-shadow 0.2s;
+            text-decoration: none;
+            border-radius: 10px;
+            transition: transform 0.2s;
         }
 
-        button:hover {
+        .links a:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
         }
 
-        button:active {
-            transform: translateY(0);
-        }
-
-        .mensagem {
-            margin-top: 20px;
-            padding: 12px;
-            border-radius: 12px;
-            display: none;
-            font-size: 0.9em;
-        }
-
-        .erro {
-            background-color: #fee;
-            color: #c33;
-            border: 1px solid #fcc;
-            display: block;
-        }
-
-        .info {
-            margin-top: 32px;
-            padding-top: 20px;
-            border-top: 1px solid #eee;
-            font-size: 0.85em;
-            color: #999;
-        }
-
-        .info p {
-            margin: 5px 0;
-        }
-
-        /* Tablets */
-        @media (min-width: 768px) {
-            .login-container {
-                padding: 48px 40px;
-            }
-
-            h1 {
-                font-size: 2.2em;
-            }
+        .logo {
+            font-size: 3em;
+            margin-bottom: 20px;
         }
     </style>
 </head>
 
 <body>
-    <div class="login-container">
-        <div class="logo">✂️</div>
-        <h1>Barbearia Estilo</h1>
-        <p class="subtitle">Sistema de Gestão</p>
-
-        <form id="loginForm">
-            <div class="form-group">
-                <label>Usuário</label>
-                <input type="text" id="username" required placeholder="Digite seu usuário" autocomplete="off">
-            </div>
-
-            <div class="form-group">
-                <label>Senha</label>
-                <input type="password" id="senha" required placeholder="Digite sua senha">
-            </div>
-
-            <button type="submit">Entrar no Sistema</button>
-        </form>
-
-        <div id="mensagem" class="mensagem"></div>
-
-        <div class="info">
-            <p>🔐 Usuário: <strong>admin</strong></p>
-            <p>🔑 Senha: <strong>123456</strong></p>
+    <div class="container">
+        <div class="logo">📋</div>
+        <h1>AgendaPro</h1>
+        <p>Sistema de Gestão Multi-segmento</p>
+        <div class="links">
+            <a href="login-barbearia.html">🔐 Acessar Minha Conta</a>
+            <a href="cadastro-barbearia.html">📝 Criar Nova Conta (Trial 14 dias)</a>
+            <a href="admin-panel.html">👑 Admin</a>
         </div>
     </div>
-
-    <script>
-        const API_URL = 'http://localhost:3000/api';
-
-        document.getElementById('loginForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            const username = document.getElementById('username').value;
-            const senha = document.getElementById('senha').value;
-
-            try {
-                const response = await fetch(`${API_URL}/login`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, senha })
-                });
-
-                const resultado = await response.json();
-
-                if (response.ok) {
-                    localStorage.setItem('usuario', JSON.stringify(resultado));
-                    window.location.href = '/dashboard.html';
-                } else {
-                    mostrarErro(resultado.erro);
-                }
-            } catch (error) {
-                mostrarErro('Erro ao conectar com o servidor');
-            }
-        });
-
-        function mostrarErro(msg) {
-            const msgDiv = document.getElementById('mensagem');
-            msgDiv.textContent = msg;
-            msgDiv.className = 'mensagem erro';
-            setTimeout(() => {
-                msgDiv.className = 'mensagem';
-            }, 3000);
-        }
-
-        if (localStorage.getItem('usuario')) {
-            window.location.href = '/dashboard.html';
-        }
-    </script>
 </body>
 
 </html>

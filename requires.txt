@@ -21,3 +21,22 @@ Cadastro de barbearia: http://localhost:3000/cadastro-barbearia.html
 Cadastro de barbearia	/cadastro-barbearia.html	-
 Login da barbearia	/login-barbearia.html	email cadastrado
 Admin (você)	/admin-panel.html	superadmin / admin123
+
+git add .
+git commit -m "Descrição da alteração"
+git push
+
+
+Você altera código local
+       ↓
+git add . / git commit / git push
+       ↓
+GitHub recebe as alterações
+       ↓
+Render detecta a mudança (automático)
+       ↓
+Render faz novo deploy (2-3 minutos)
+       ↓
+Sistema atualizado no ar! 🚀
+
+https://agendapro.onrender.com
