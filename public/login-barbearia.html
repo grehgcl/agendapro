@@ -82,7 +82,6 @@
                 const resultado = await response.json();
 
                 if (response.ok) {
-                    // Salvar no localStorage
                     localStorage.setItem('barbearia', JSON.stringify({
                         id: resultado.id,
                         nome: resultado.nome,
@@ -90,12 +89,8 @@
                         token: resultado.token
                     }));
 
-                    // Verificar se salvou
-                    const teste = localStorage.getItem('barbearia');
-                    console.log('Salvo:', teste);
-
-                    // Redirecionar
-                    window.location.href = 'dashboard-test.html';
+                    // REDIRECIONAR PARA O DASHBOARD PRINCIPAL
+                    window.location.href = 'dashboard-barbearia.html';
                 } else {
                     document.getElementById('mensagem').innerHTML = `<p class="erro">${resultado.erro}</p>`;
                 }
