@@ -282,15 +282,34 @@ app.delete('/api/agendamentos/:id', verificarAcesso, async (req, res) => {
 
 // Listar serviços
 app.get('/api/servicos', verificarAcesso, async (req, res) => {
-    try {
-        const result = await pool.query(
-            'SELECT * FROM servicos WHERE barbearia_id = $1 ORDER BY nome',
-            [req.barbeariaId]
-        );
-        res.json(result.rows);
-    } catch (error) {
-        res.status(500).json({ erro: error.message });
-    }
+    const result = await pool.query('SELECT * FROM servicos WHERE barbearia_id = $1 ORDER BY nome', [req.barbeariaId]);
+    res.json(result.rows);
+});
+
+// Criar serviço
+app.post('/api/servicos', verificarAcesso, async (req, res) => {
+    const { nome, descricao, preco, duracao } = req.body;
+    const result = await pool.query(
+        `INSERT INTO servicos (barbearia_id, nome, descricao, preco, duracao) VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+        [req.barbeariaId, nome, descricao || '', preco, duracao || 30]
+    );
+    res.json({ id: result.rows[0].id, mensagem: '✅ Serviço criado!' });
+});
+
+// Atualizar serviço
+app.put('/api/servicos/:id', verificarAcesso, async (req, res) => {
+    const { nome, descricao, preco, duracao } = req.body;
+    await pool.query(
+        `UPDATE servicos SET nome = $1, descricao = $2, preco = $3, duracao = $4 WHERE id = $5 AND barbearia_id = $6`,
+        [nome, descricao || '', preco, duracao || 30, req.params.id, req.barbeariaId]
+    );
+    res.json({ mensagem: '✅ Serviço atualizado!' });
+});
+
+// Excluir serviço
+app.delete('/api/servicos/:id', verificarAcesso, async (req, res) => {
+    await pool.query('DELETE FROM servicos WHERE id = $1 AND barbearia_id = $2', [req.params.id, req.barbeariaId]);
+    res.json({ mensagem: '✅ Serviço excluído!' });
 });
 
 // Faturamento do mês
