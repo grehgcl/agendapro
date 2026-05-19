@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Planos - Barbearia Estilo</title>
+    <title>Planos - AgendaPro</title>
     <style>
         * {
             margin: 0;
@@ -127,7 +127,7 @@
 
 <body>
     <div class="container">
-        <h1>✂️ Escolha o Melhor Plano</h1>
+        <h1>📋 Escolha o Melhor Plano</h1>
 
         <div class="planos-grid" id="planosGrid">
             <div class="loading">Carregando planos...</div>
@@ -145,38 +145,58 @@
     </div>
 
     <script>
-        const API_URL = 'http://localhost:3000/api';
-        const barbearia = JSON.parse(localStorage.getItem('barbearia'));
+        const API_URL = '/api';
 
         async function carregarPlanos() {
-            const response = await fetch(`${API_URL}/planos`);
-            const planos = await response.json();
+            try {
+                console.log('Carregando planos...');
+                const response = await fetch(`${API_URL}/planos`);
+                console.log('Resposta:', response.status);
 
-            const grid = document.getElementById('planosGrid');
+                if (!response.ok) {
+                    throw new Error('Erro ao carregar planos');
+                }
 
-            grid.innerHTML = planos.map((plano, index) => `
-                <div class="plano-card ${index === 0 ? 'popular' : ''}">
-                    ${index === 0 ? '<div class="popular-badge">🔥 MAIS POPULAR</div>' : ''}
-                    <div class="plano-nome">${plano.nome}</div>
-                    <div class="plano-preco">
-                        R$ ${plano.preco.toFixed(2)}
-                        <small>/mês</small>
+                const planos = await response.json();
+                console.log('Planos recebidos:', planos);
+
+                const grid = document.getElementById('planosGrid');
+
+                if (!planos || planos.length === 0) {
+                    grid.innerHTML = '<p style="color:white">Nenhum plano disponível</p>';
+                    return;
+                }
+
+                grid.innerHTML = planos.map((plano, index) => `
+                    <div class="plano-card ${index === 1 ? 'popular' : ''}">
+                        ${index === 1 ? '<div class="popular-badge">🔥 MAIS POPULAR</div>' : ''}
+                        <div class="plano-nome">${plano.nome}</div>
+                        <div class="plano-preco">
+                            R$ ${plano.preco.toFixed(2)}
+                            <small>/mês</small>
+                        </div>
+                        <div class="plano-descricao">${plano.descricao || 'Ideal para seu negócio'}</div>
+                        <button class="btn-assinar" onclick="assinarPlano('${plano.id}', ${plano.preco})">
+                            Assinar Agora
+                        </button>
                     </div>
-                    <div class="plano-descricao">${plano.descricao}</div>
-                    <button class="btn-assinar" onclick="assinarPlano('${plano.id}', ${plano.preco})">
-                        Assinar Agora
-                    </button>
-                </div>
-            `).join('');
+                `).join('');
+            } catch (error) {
+                console.error('Erro:', error);
+                document.getElementById('planosGrid').innerHTML = `<p style="color:white">Erro ao carregar planos: ${error.message}</p>`;
+            }
         }
 
         async function assinarPlano(planoId, valor) {
+            const barbearia = JSON.parse(localStorage.getItem('barbearia'));
+
             if (!barbearia) {
+                alert('Faça login primeiro!');
                 window.location.href = 'login-barbearia.html';
                 return;
             }
 
-            if (confirm(`Confirmar assinatura do plano por R$ ${valor.toFixed(2)}?`)) {
+            if (confirm(`Confirmar assinatura do plano ${planoId} por R$ ${valor.toFixed(2)}?`)) {
                 try {
                     const response = await fetch(`${API_URL}/renovar-assinatura`, {
                         method: 'POST',
@@ -195,19 +215,16 @@
                         localStorage.removeItem('barbearia');
                         window.location.href = 'login-barbearia.html';
                     } else {
-                        alert(resultado.erro);
+                        alert(resultado.erro || 'Erro ao processar');
                     }
                 } catch (error) {
-                    alert('Erro ao processar pagamento');
+                    alert('Erro ao processar pagamento: ' + error.message);
                 }
             }
         }
 
+        // Carregar planos ao abrir a página
         carregarPlanos();
-
-        if (barbearia && barbearia.dias_restantes > 0) {
-            console.log(`Dias restantes: ${barbearia.dias_restantes}`);
-        }
     </script>
 </body>
 
