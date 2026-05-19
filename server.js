@@ -25,6 +25,8 @@ async function initDatabase() {
             CREATE TABLE IF NOT EXISTS barbearias (
                 id SERIAL PRIMARY KEY,
                 nome TEXT NOT NULL,
+                cnpj TEXT,
+                telefone TEXT,
                 email TEXT UNIQUE NOT NULL,
                 senha TEXT NOT NULL,
                 plano TEXT DEFAULT 'trial',
@@ -33,6 +35,7 @@ async function initDatabase() {
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
+        console.log('✅ Tabela barbearias OK');
 
         // Tabela agendamentos
         await pool.query(`
@@ -48,6 +51,7 @@ async function initDatabase() {
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
+        console.log('✅ Tabela agendamentos OK');
 
         // Tabela clientes
         await pool.query(`
@@ -60,6 +64,7 @@ async function initDatabase() {
                 data_cadastro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
+        console.log('✅ Tabela clientes OK');
 
         // Tabela servicos
         await pool.query(`
@@ -72,10 +77,11 @@ async function initDatabase() {
                 duracao INTEGER DEFAULT 30
             )
         `);
+        console.log('✅ Tabela servicos OK');
 
-        console.log('✅ Banco de dados pronto!');
+        console.log('✅ Banco de dados PostgreSQL pronto!');
     } catch (error) {
-        console.error('❌ Erro ao criar tabelas:', error.message);
+        console.error('❌ Erro:', error.message);
     }
 }
 
@@ -175,26 +181,63 @@ app.post('/api/login-admin', (req, res) => {
 // Dashboard
 app.get('/api/dashboard', verificarAcesso, async (req, res) => {
     try {
+        // Buscar todos agendamentos da barbearia
         const result = await pool.query(
             'SELECT * FROM agendamentos WHERE barbearia_id = $1 ORDER BY data, hora',
             [req.barbeariaId]
         );
 
-        const hoje = new Date().toISOString().split('T')[0];
-        const agendamentosHoje = result.rows.filter(a => a.data === hoje);
-        const faturamentoHoje = agendamentosHoje.reduce((sum, a) => sum + a.preco, 0);
+        // Buscar faturamento do mês
+        const hoje = new Date();
+        const ano = hoje.getFullYear();
+        const mes = hoje.getMonth() + 1;
+        const mesStr = `${ano}-${mes.toString().padStart(2, '0')}%`;
+
+        const fatMes = await pool.query(
+            'SELECT SUM(preco) as total FROM agendamentos WHERE barbearia_id = $1 AND data LIKE $2',
+            [req.barbeariaId, mesStr]
+        );
+
+        // Gerar próximos 7 dias
+        const semana = [];
+        for (let i = 0; i < 7; i++) {
+            const data = new Date();
+            data.setDate(data.getDate() + i);
+            const dataStr = data.toISOString().split('T')[0];
+            semana.push(dataStr);
+        }
+
+        // Organizar agendamentos por dia
+        const agendamentos = result.rows;
+        const agendamentosPorDia = {};
+        semana.forEach(dia => {
+            agendamentosPorDia[dia] = agendamentos.filter(a => a.data === dia);
+        });
+
+        // Faturamento de hoje
+        const hojeStr = hoje.toISOString().split('T')[0];
+        const faturamentoHoje = agendamentosPorDia[hojeStr]?.reduce((sum, a) => sum + a.preco, 0) || 0;
+
+        // Faturamento da semana
+        const faturamentoSemana = agendamentos.reduce((sum, a) => sum + a.preco, 0);
 
         res.json({
-            agendamentos: result.rows,
-            faturamentoHoje: faturamentoHoje,
-            total: result.rows.length
+            semana: semana,
+            agendamentos: agendamentosPorDia,
+            faturamento: {
+                dia: faturamentoHoje,
+                semana: faturamentoSemana,
+                mes: fatMes.rows[0]?.total || 0
+            },
+            totalAgendamentos: agendamentos.length
         });
     } catch (error) {
+        console.error('Erro no dashboard:', error);
         res.status(500).json({ erro: error.message });
     }
 });
 
-// Agendamentos
+// Listar agendamentos
 app.get('/api/agendamentos', verificarAcesso, async (req, res) => {
     const { data } = req.query;
 
@@ -212,10 +255,12 @@ app.get('/api/agendamentos', verificarAcesso, async (req, res) => {
         const result = await pool.query(query, params);
         res.json(result.rows);
     } catch (error) {
+        console.error('Erro:', error);
         res.status(500).json({ erro: error.message });
     }
 });
 
+// Criar agendamento
 app.post('/api/agendamentos', verificarAcesso, async (req, res) => {
     const { nome, servico, preco, data, hora, telefone } = req.body;
 
@@ -227,10 +272,12 @@ app.post('/api/agendamentos', verificarAcesso, async (req, res) => {
         );
         res.json({ mensagem: '✅ Agendado com sucesso!' });
     } catch (error) {
+        console.error('Erro:', error);
         res.status(500).json({ erro: error.message });
     }
 });
 
+// Deletar agendamento
 app.delete('/api/agendamentos/:id', verificarAcesso, async (req, res) => {
     try {
         await pool.query(
@@ -239,6 +286,7 @@ app.delete('/api/agendamentos/:id', verificarAcesso, async (req, res) => {
         );
         res.json({ mensagem: '✅ Cancelado!' });
     } catch (error) {
+        console.error('Erro:', error);
         res.status(500).json({ erro: error.message });
     }
 });
@@ -362,7 +410,26 @@ app.get('/api/planos', (req, res) => {
     ]);
 });
 
-// Admin
+// Faturamento do mês
+app.get('/api/faturamento/mes', verificarAcesso, async (req, res) => {
+    try {
+        const hoje = new Date();
+        const ano = hoje.getFullYear();
+        const mes = hoje.getMonth() + 1;
+        const mesStr = `${ano}-${mes.toString().padStart(2, '0')}%`;
+
+        const result = await pool.query(
+            'SELECT SUM(preco) as total FROM agendamentos WHERE barbearia_id = $1 AND data LIKE $2',
+            [req.barbeariaId, mesStr]
+        );
+
+        res.json({ faturamento: result.rows[0]?.total || 0 });
+    } catch (error) {
+        res.status(500).json({ erro: error.message });
+    }
+});
+
+// Admin - Listar barbearias
 app.get('/api/admin/barbearias', async (req, res) => {
     const auth = req.headers['authorization'];
     if (auth !== 'admin-token') {
@@ -381,6 +448,6 @@ app.get('/api/admin/barbearias', async (req, res) => {
 initDatabase().then(() => {
     app.listen(PORT, () => {
         console.log(`🚀 Servidor rodando na porta ${PORT}`);
-        console.log(`📁 Modo: PostgreSQL (Produção)`);
+        console.log(`📁 Modo: PostgreSQL (Render)`);
     });
 });
