@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Teste Dashboard</title>
+    <style>
+        body {
+            font-family: Arial;
+            padding: 20px;
+        }
+
+        .agendamento {
+            background: #f0f0f0;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>📅 Meus Agendamentos</h1>
+    <div id="lista"></div>
+    <button onclick="carregar()">Atualizar</button>
+    <button onclick="window.location.href='agenda-barbearia.html'">Novo Agendamento</button>
+
+    <script>
+        const barbearia = JSON.parse(localStorage.getItem('barbearia'));
+
+        if (!barbearia) {
+            document.body.innerHTML = '<h1>Faça login primeiro</h1><a href="login-barbearia.html">Login</a>';
+        }
+
+        async function carregar() {
+            document.getElementById('lista').innerHTML = '<p>Carregando...</p>';
+
+            try {
+                const response = await fetch('/api/agendamentos', {
+                    headers: {
+                        'barbearia-id': barbearia.id,
+                        'Authorization': barbearia.token
+                    }
+                });
+
+                const dados = await response.json();
+                console.log('Dados recebidos:', dados);
+
+                if (dados.length === 0) {
+                    document.getElementById('lista').innerHTML = '<p>Nenhum agendamento encontrado</p>';
+                    return;
+                }
+
+                let html = '';
+                for (const ag of dados) {
+                    html += `
+                        <div class="agendamento">
+                            <strong>${ag.data} às ${ag.hora}</strong><br>
+                            Cliente: ${ag.nome}<br>
+                            Serviço: ${ag.servico}<br>
+                            Valor: R$ ${ag.preco}
+                        </div>
+                    `;
+                }
+                document.getElementById('lista').innerHTML = html;
+
+            } catch (error) {
+                document.getElementById('lista').innerHTML = '<p>Erro: ' + error.message + '</p>';
+            }
+        }
+
+        carregar();
+    </script>
+</body>
+
+</html>
