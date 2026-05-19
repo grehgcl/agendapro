@@ -38,6 +38,7 @@
             padding: 20px;
             border-radius: 10px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            text-align: center;
         }
 
         .card h3 {
@@ -82,6 +83,11 @@
             color: white;
         }
 
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
         .semana-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -108,7 +114,7 @@
 
         .agendamentos-lista {
             padding: 15px;
-            max-height: 300px;
+            max-height: 400px;
             overflow-y: auto;
         }
 
@@ -123,12 +129,29 @@
         .agendamento-hora {
             font-weight: bold;
             color: #667eea;
+            font-size: 14px;
+        }
+
+        .agendamento-nome {
+            font-weight: bold;
+            margin: 5px 0;
+        }
+
+        .agendamento-servico {
+            color: #666;
+            font-size: 13px;
+        }
+
+        .agendamento-telefone {
+            color: #999;
+            font-size: 12px;
+            margin-top: 5px;
         }
 
         .sem-agendamentos {
             text-align: center;
             color: #999;
-            padding: 20px;
+            padding: 30px;
         }
 
         .btn-sair {
@@ -139,18 +162,33 @@
             color: white;
             cursor: pointer;
         }
+
+        .btn-cancelar {
+            margin-top: 8px;
+            padding: 5px 10px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .btn-cancelar:hover {
+            background: #c82333;
+        }
     </style>
 </head>
 
 <body>
     <div class="header">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
             <div>
                 <h2>📋 AgendaPro</h2>
                 <p>Sistema de Gestão</p>
             </div>
             <div>
-                <span id="userName"></span>
+                <span id="userName" style="margin-right: 15px;"></span>
                 <button class="btn-sair" onclick="logout()">Sair</button>
             </div>
         </div>
@@ -178,38 +216,29 @@
         <button class="btn btn-success" onclick="carregarDashboard()">🔄 Atualizar</button>
     </div>
 
-    <h3>📅 Agendamentos da Semana</h3>
-    <div id="agendaContent"></div>
+    <h3 style="margin-bottom: 15px;">📅 Agendamentos da Semana</h3>
+    <div id="agendaContent">Carregando...</div>
 
     <script>
-        const API_URL = '/api';
         const barbearia = JSON.parse(localStorage.getItem('barbearia'));
 
-        if (!barbearia) window.location.href = 'login-barbearia.html';
+        if (!barbearia) {
+            window.location.href = 'login-barbearia.html';
+        }
 
         document.getElementById('userName').innerHTML = barbearia.nome;
 
-        async function fetchAPI(endpoint, options = {}) {
-            const response = await fetch(`${API_URL}${endpoint}`, {
-                ...options,
-                headers: {
-                    'Content-Type': 'application/json',
-                    'barbearia-id': barbearia.id,
-                    'Authorization': barbearia.token,
-                    ...options.headers
-                }
-            });
-            if (response.status === 401) window.location.href = 'login-barbearia.html';
-            return response;
-        }
-
         async function carregarDashboard() {
             try {
-                // Buscar agendamentos diretamente
-                const response = await fetchAPI('/agendamentos');
-                const agendamentos = await response.json();
+                const response = await fetch('/api/agendamentos', {
+                    headers: {
+                        'barbearia-id': barbearia.id,
+                        'Authorization': barbearia.token
+                    }
+                });
 
-                console.log('Agendamentos recebidos:', agendamentos);
+                const agendamentos = await response.json();
+                console.log('Agendamentos:', agendamentos);
 
                 // Calcular totais
                 const hoje = new Date().toISOString().split('T')[0];
@@ -229,27 +258,25 @@
                     semana.push(data.toISOString().split('T')[0]);
                 }
 
-                // Organizar por dia
-                const agendamentosPorDia = {};
-                semana.forEach(dia => {
-                    agendamentosPorDia[dia] = agendamentos.filter(a => a.data === dia);
-                });
-
-                // Montar HTML
+                // Montar grid
                 let html = '<div class="semana-grid">';
+
                 for (const data of semana) {
-                    const lista = agendamentosPorDia[data] || [];
+                    const lista = agendamentos.filter(a => a.data === data);
                     const [ano, mes, dia] = data.split('-');
-                    const dias = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+                    const dias = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+                    const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
                     const dataObj = new Date(ano, mes - 1, dia);
                     const nomeDia = dias[dataObj.getDay()];
+                    const nomeMes = meses[parseInt(mes) - 1];
                     const isHoje = data === hoje;
 
                     html += `
                         <div class="dia-card">
                             <div class="dia-header ${isHoje ? 'today' : ''}">
-                                <strong>${nomeDia}, ${dia}/${mes}</strong>
-                                <div style="font-size: 12px;">${lista.length} agendamento(s)</div>
+                                <strong>${nomeDia}, ${parseInt(dia)} ${nomeMes}</strong>
+                                <div style="font-size: 11px; margin-top: 3px;">${data}</div>
+                                <div style="font-size: 11px; margin-top: 3px;">${lista.length} agendamento(s)</div>
                             </div>
                             <div class="agendamentos-lista">
                     `;
@@ -261,10 +288,10 @@
                             html += `
                                 <div class="agendamento-item">
                                     <div class="agendamento-hora">🕐 ${ag.hora}</div>
-                                    <div><strong>${ag.nome}</strong></div>
-                                    <div>✂️ ${ag.servico} - R$ ${ag.preco}</div>
-                                    ${ag.telefone ? `<div>📞 ${ag.telefone}</div>` : ''}
-                                    <button onclick="excluirAgendamento(${ag.id})" style="margin-top:8px; padding:5px 10px; background:#dc3545; color:white; border:none; border-radius:5px; cursor:pointer;">Cancelar</button>
+                                    <div class="agendamento-nome">👤 ${ag.nome}</div>
+                                    <div class="agendamento-servico">✂️ ${ag.servico} - R$ ${ag.preco}</div>
+                                    ${ag.telefone ? `<div class="agendamento-telefone">📞 ${ag.telefone}</div>` : ''}
+                                    <button class="btn-cancelar" onclick="excluirAgendamento(${ag.id})">Cancelar</button>
                                 </div>
                             `;
                         });
@@ -276,14 +303,24 @@
 
             } catch (error) {
                 console.error('Erro:', error);
-                document.getElementById('agendaContent').innerHTML = `<p style="color:red">Erro: ${error.message}</p>`;
+                document.getElementById('agendaContent').innerHTML = `<p style="color:red">Erro ao carregar: ${error.message}</p>`;
             }
         }
 
         async function excluirAgendamento(id) {
             if (confirm('Cancelar este agendamento?')) {
-                await fetchAPI(`/agendamentos/${id}`, { method: 'DELETE' });
-                carregarDashboard();
+                const response = await fetch(`/api/agendamentos/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'barbearia-id': barbearia.id,
+                        'Authorization': barbearia.token
+                    }
+                });
+                if (response.ok) {
+                    carregarDashboard();
+                } else {
+                    alert('Erro ao cancelar');
+                }
             }
         }
 
