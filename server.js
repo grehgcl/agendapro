@@ -163,7 +163,6 @@ app.post('/api/login-admin', (req, res) => {
 // Dashboard
 app.get('/api/dashboard', verificarAcesso, async (req, res) => {
     try {
-        // Buscar agendamentos da barbearia
         const result = await pool.query(
             'SELECT * FROM agendamentos WHERE barbearia_id = $1 ORDER BY data, hora',
             [req.barbeariaId]
@@ -171,9 +170,19 @@ app.get('/api/dashboard', verificarAcesso, async (req, res) => {
 
         console.log(`📊 Dashboard - Barbearia ${req.barbeariaId} tem ${result.rows.length} agendamentos`);
 
-        // Gerar próximos 7 dias
-        const semana = [];
         const hoje = new Date();
+        const ano = hoje.getFullYear();
+        const mes = hoje.getMonth() + 1;
+        const primeiroDia = `${ano}-${mes.toString().padStart(2, '0')}-01`;
+        const ultimoDia = new Date(ano, mes, 0).toISOString().split('T')[0];
+
+        const fatMes = await pool.query(
+            `SELECT COALESCE(SUM(preco), 0) as total FROM agendamentos 
+             WHERE barbearia_id = $1 AND data >= $2 AND data <= $3`,
+            [req.barbeariaId, primeiroDia, ultimoDia]
+        );
+
+        const semana = [];
         for (let i = 0; i < 7; i++) {
             const data = new Date();
             data.setDate(hoje.getDate() + i);
@@ -181,13 +190,11 @@ app.get('/api/dashboard', verificarAcesso, async (req, res) => {
             semana.push(dataStr);
         }
 
-        // Organizar por dia
         const agendamentosPorDia = {};
         semana.forEach(dia => {
             agendamentosPorDia[dia] = result.rows.filter(a => a.data === dia);
         });
 
-        // Calcular faturamentos
         const hojeStr = hoje.toISOString().split('T')[0];
         const faturamentoHoje = agendamentosPorDia[hojeStr]?.reduce((sum, a) => sum + a.preco, 0) || 0;
         const faturamentoSemana = result.rows.reduce((sum, a) => sum + a.preco, 0);
@@ -195,7 +202,11 @@ app.get('/api/dashboard', verificarAcesso, async (req, res) => {
         res.json({
             semana: semana,
             agendamentos: agendamentosPorDia,
-            faturamento: { dia: faturamentoHoje, semana: faturamentoSemana, mes: 0 },
+            faturamento: {
+                dia: faturamentoHoje,
+                semana: faturamentoSemana,
+                mes: parseFloat(fatMes.rows[0]?.total) || 0
+            },
             totalAgendamentos: result.rows.length
         });
     } catch (error) {
@@ -221,6 +232,13 @@ app.get('/api/agendamentos', verificarAcesso, async (req, res) => {
 
         const result = await pool.query(query, params);
         console.log(`📋 Listando ${result.rows.length} agendamentos para barbearia ${req.barbeariaId}`);
+
+        if (result.rows.length > 0) {
+            result.rows.forEach(a => {
+                console.log(`   - ${a.data} ${a.hora}: ${a.nome} - ${a.servico}`);
+            });
+        }
+
         res.json(result.rows);
     } catch (error) {
         console.error('Erro:', error);
@@ -258,6 +276,29 @@ app.delete('/api/agendamentos/:id', verificarAcesso, async (req, res) => {
         );
         res.json({ mensagem: '✅ Cancelado!' });
     } catch (error) {
+        res.status(500).json({ erro: error.message });
+    }
+});
+
+// Faturamento do mês
+app.get('/api/faturamento/mes', verificarAcesso, async (req, res) => {
+    try {
+        const hoje = new Date();
+        const ano = hoje.getFullYear();
+        const mes = hoje.getMonth() + 1;
+
+        const primeiroDia = `${ano}-${mes.toString().padStart(2, '0')}-01`;
+        const ultimoDia = new Date(ano, mes, 0).toISOString().split('T')[0];
+
+        const result = await pool.query(
+            `SELECT COALESCE(SUM(preco), 0) as total FROM agendamentos 
+             WHERE barbearia_id = $1 AND data >= $2 AND data <= $3`,
+            [req.barbeariaId, primeiroDia, ultimoDia]
+        );
+
+        res.json({ faturamento: parseFloat(result.rows[0]?.total) || 0 });
+    } catch (error) {
+        console.error('Erro faturamento/mes:', error);
         res.status(500).json({ erro: error.message });
     }
 });
