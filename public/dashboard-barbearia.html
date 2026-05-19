@@ -205,18 +205,40 @@
 
         async function carregarDashboard() {
             try {
-                const response = await fetchAPI('/dashboard');
-                const dados = await response.json();
+                // Buscar agendamentos diretamente
+                const response = await fetchAPI('/agendamentos');
+                const agendamentos = await response.json();
 
-                document.getElementById('faturamentoDia').innerHTML = `R$ ${dados.faturamento.dia.toFixed(2)}`;
-                document.getElementById('faturamentoSemana').innerHTML = `R$ ${dados.faturamento.semana.toFixed(2)}`;
-                document.getElementById('totalAgendamentos').innerHTML = dados.totalAgendamentos;
+                console.log('Agendamentos recebidos:', agendamentos);
 
+                // Calcular totais
                 const hoje = new Date().toISOString().split('T')[0];
-                let html = '<div class="semana-grid">';
+                const agendamentosHoje = agendamentos.filter(a => a.data === hoje);
+                const totalHoje = agendamentosHoje.reduce((s, a) => s + a.preco, 0);
+                const totalSemana = agendamentos.reduce((s, a) => s + a.preco, 0);
 
-                for (const data of dados.semana) {
-                    const agendamentos = dados.agendamentos[data] || [];
+                document.getElementById('faturamentoDia').innerHTML = `R$ ${totalHoje.toFixed(2)}`;
+                document.getElementById('faturamentoSemana').innerHTML = `R$ ${totalSemana.toFixed(2)}`;
+                document.getElementById('totalAgendamentos').innerHTML = agendamentos.length;
+
+                // Gerar próximos 7 dias
+                const semana = [];
+                for (let i = 0; i < 7; i++) {
+                    const data = new Date();
+                    data.setDate(data.getDate() + i);
+                    semana.push(data.toISOString().split('T')[0]);
+                }
+
+                // Organizar por dia
+                const agendamentosPorDia = {};
+                semana.forEach(dia => {
+                    agendamentosPorDia[dia] = agendamentos.filter(a => a.data === dia);
+                });
+
+                // Montar HTML
+                let html = '<div class="semana-grid">';
+                for (const data of semana) {
+                    const lista = agendamentosPorDia[data] || [];
                     const [ano, mes, dia] = data.split('-');
                     const dias = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
                     const dataObj = new Date(ano, mes - 1, dia);
@@ -227,21 +249,22 @@
                         <div class="dia-card">
                             <div class="dia-header ${isHoje ? 'today' : ''}">
                                 <strong>${nomeDia}, ${dia}/${mes}</strong>
-                                <div style="font-size: 12px;">${agendamentos.length} agendamento(s)</div>
+                                <div style="font-size: 12px;">${lista.length} agendamento(s)</div>
                             </div>
                             <div class="agendamentos-lista">
                     `;
 
-                    if (agendamentos.length === 0) {
+                    if (lista.length === 0) {
                         html += '<div class="sem-agendamentos">📅 Nenhum agendamento</div>';
                     } else {
-                        agendamentos.forEach(ag => {
+                        lista.forEach(ag => {
                             html += `
                                 <div class="agendamento-item">
                                     <div class="agendamento-hora">🕐 ${ag.hora}</div>
                                     <div><strong>${ag.nome}</strong></div>
                                     <div>✂️ ${ag.servico} - R$ ${ag.preco}</div>
-                                    <button onclick="excluirAgendamento(${ag.id})" style="margin-top:5px; padding:5px; background:#dc3545; color:white; border:none; border-radius:5px; cursor:pointer;">Cancelar</button>
+                                    ${ag.telefone ? `<div>📞 ${ag.telefone}</div>` : ''}
+                                    <button onclick="excluirAgendamento(${ag.id})" style="margin-top:8px; padding:5px 10px; background:#dc3545; color:white; border:none; border-radius:5px; cursor:pointer;">Cancelar</button>
                                 </div>
                             `;
                         });
@@ -250,7 +273,9 @@
                 }
                 html += '</div>';
                 document.getElementById('agendaContent').innerHTML = html;
+
             } catch (error) {
+                console.error('Erro:', error);
                 document.getElementById('agendaContent').innerHTML = `<p style="color:red">Erro: ${error.message}</p>`;
             }
         }
