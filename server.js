@@ -263,15 +263,19 @@ app.get('/api/agendamentos', verificarAcesso, async (req, res) => {
 app.post('/api/agendamentos', verificarAcesso, async (req, res) => {
     const { nome, servico, preco, data, hora, telefone } = req.body;
 
+    console.log('📝 Novo agendamento:', { nome, servico, preco, data, hora, barbeariaId: req.barbeariaId });
+
     try {
-        await pool.query(
+        const result = await pool.query(
             `INSERT INTO agendamentos (barbearia_id, nome, servico, preco, data, hora, telefone)
-             VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+             VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
             [req.barbeariaId, nome, servico, preco, data, hora, telefone || '']
         );
-        res.json({ mensagem: '✅ Agendado com sucesso!' });
+
+        console.log('✅ Agendamento criado! ID:', result.rows[0].id);
+        res.json({ mensagem: '✅ Agendado com sucesso!', id: result.rows[0].id });
     } catch (error) {
-        console.error('Erro:', error);
+        console.error('❌ Erro ao criar agendamento:', error.message);
         res.status(500).json({ erro: error.message });
     }
 });

@@ -693,12 +693,15 @@
                 const response = await fetchAPI('/dashboard');
                 const dados = await response.json();
 
+                console.log('Dados recebidos:', dados); // Para debug
+
                 const hoje = new Date().toISOString().split('T')[0];
                 const agendamentosHoje = dados.agendamentos[hoje] || [];
                 const totalHoje = agendamentosHoje.reduce((sum, a) => sum + (a.preco || 0), 0);
 
                 document.getElementById('faturamentoDia').innerHTML = `R$ ${totalHoje.toFixed(2)}`;
                 document.getElementById('faturamentoSemana').innerHTML = `R$ ${dados.faturamento.semana.toFixed(2)}`;
+                document.getElementById('faturamentoMes').innerHTML = `R$ ${dados.faturamento.mes.toFixed(2)}`;
                 document.getElementById('totalDia').innerHTML = `${agendamentosHoje.length} agendamentos`;
                 document.getElementById('totalSemana').innerHTML = `${dados.totalAgendamentos} agendamentos`;
 
@@ -708,34 +711,43 @@
                     const agendamentos = dados.agendamentos[data] || [];
                     const isHoje = data === hoje;
 
+                    // Formatar data para exibição
+                    const partes = data.split('-');
+                    const dataObj = new Date(partes[0], partes[1] - 1, partes[2]);
+                    const diasSemana = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+                    const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+                    const nomeDia = diasSemana[dataObj.getDay()];
+                    const diaNum = parseInt(partes[2]);
+                    const nomeMes = meses[parseInt(partes[1]) - 1];
+
                     html += `
-                        <div class="dia-card">
-                            <div class="dia-header ${isHoje ? 'today' : ''}">
-                                <h4>${formatarData(data)}</h4>
-                                <div class="data">${data}</div>
-                                <div style="font-size: 0.65em; margin-top: 4px;">${agendamentos.length} agendamento(s)</div>
-                            </div>
-                            <div class="agendamentos-lista">
-                    `;
+                <div class="dia-card">
+                    <div class="dia-header ${isHoje ? 'today' : ''}">
+                        <h4>${nomeDia}, ${diaNum} ${nomeMes}</h4>
+                        <div class="data">${data}</div>
+                        <div style="font-size: 0.65em; margin-top: 4px;">${agendamentos.length} agendamento(s)</div>
+                    </div>
+                    <div class="agendamentos-lista">
+            `;
 
                     if (agendamentos.length === 0) {
                         html += '<div class="sem-agendamentos">📅 Nenhum agendamento</div>';
                     } else {
                         agendamentos.forEach(ag => {
                             html += `
-                                <div class="agendamento-item" data-id="${ag.id}">
-                                    <div class="agendamento-header">
-                                        <div class="agendamento-hora">🕐 ${ag.hora}</div>
-                                        <div class="agendamento-acoes">
-                                            <button class="btn-editar-agenda" onclick="abrirModalEditar(${ag.id}, '${ag.data}')" title="Editar">✏️</button>
-                                            <button class="btn-excluir-agenda" onclick="excluirAgendamento(${ag.id})" title="Cancelar">🗑️</button>
-                                        </div>
-                                    </div>
-                                    <div class="agendamento-nome">👤 ${escapeHtml(ag.nome)}</div>
-                                    <div class="agendamento-servico">✂️ ${ag.servico} - R$ ${ag.preco}</div>
-                                    ${ag.telefone ? `<div class="agendamento-telefone">📞 ${ag.telefone}</div>` : ''}
+                        <div class="agendamento-item" data-id="${ag.id}">
+                            <div class="agendamento-header">
+                                <div class="agendamento-hora">🕐 ${ag.hora}</div>
+                                <div class="agendamento-acoes">
+                                    <button class="btn-editar-agenda" onclick="abrirModalEditar(${ag.id}, '${ag.data}')" title="Editar">✏️</button>
+                                    <button class="btn-excluir-agenda" onclick="excluirAgendamento(${ag.id})" title="Cancelar">🗑️</button>
                                 </div>
-                            `;
+                            </div>
+                            <div class="agendamento-nome">👤 ${escapeHtml(ag.nome)}</div>
+                            <div class="agendamento-servico">✂️ ${ag.servico} - R$ ${ag.preco}</div>
+                            ${ag.telefone ? `<div class="agendamento-telefone">📞 ${ag.telefone}</div>` : ''}
+                        </div>
+                    `;
                         });
                     }
 
@@ -746,13 +758,13 @@
                 document.getElementById('agendaContent').innerHTML = html;
 
             } catch (error) {
-                console.error('Erro:', error);
+                console.error('Erro ao carregar dashboard:', error);
                 document.getElementById('agendaContent').innerHTML = `
-                    <div class="loading">
-                        <p style="color: red;">❌ Erro ao carregar</p>
-                        <button onclick="carregarDashboard()" style="margin-top: 10px; padding: 10px 20px;">Tentar novamente</button>
-                    </div>
-                `;
+            <div class="loading">
+                <p style="color: red;">❌ Erro ao carregar: ${error.message}</p>
+                <button onclick="carregarDashboard()" style="margin-top: 10px; padding: 10px 20px;">Tentar novamente</button>
+            </div>
+        `;
             }
         }
 
