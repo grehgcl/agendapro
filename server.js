@@ -77,17 +77,40 @@ async function initDatabase() {
     }
 }
 
-// ============= MIDDLEWARE =============
-
+// Middleware de autenticação
 async function verificarAcesso(req, res, next) {
     const barbeariaId = req.headers['barbearia-id'];
-    if (!barbeariaId) {
-        return res.status(401).json({ erro: 'Não autorizado' });
-    }
-    req.barbeariaId = parseInt(barbeariaId);
-    next();
-}
+    const token = req.headers['authorization'];
 
+    console.log('🔐 Verificando acesso:', { barbeariaId, token });
+
+    if (!barbeariaId || !token) {
+        console.log('❌ Falta ID ou token');
+        return res.status(401).json({ erro: 'Não autorizado - falta credenciais' });
+    }
+
+    try {
+        // Verificar se a barbearia existe
+        const result = await pool.query('SELECT * FROM barbearias WHERE id = $1', [barbeariaId]);
+
+        if (result.rows.length === 0) {
+            console.log('❌ Barbearia não encontrada:', barbeariaId);
+            return res.status(401).json({ erro: 'Não autorizado - barbearia não encontrada' });
+        }
+
+        const barbearia = result.rows[0];
+
+        // Verificar se o token é válido (opcional: validar token)
+        // Por enquanto, aceita qualquer token
+
+        console.log('✅ Acesso permitido para barbearia:', barbearia.id, barbearia.nome);
+        req.barbeariaId = parseInt(barbeariaId);
+        next();
+    } catch (error) {
+        console.error('❌ Erro na autenticação:', error);
+        res.status(500).json({ erro: 'Erro interno' });
+    }
+}
 // ============= ROTAS =============
 
 // Cadastro
@@ -211,22 +234,18 @@ app.get('/api/dashboard', verificarAcesso, async (req, res) => {
 
 // Listar agendamentos
 app.get('/api/agendamentos', verificarAcesso, async (req, res) => {
-    const { data } = req.query;
+    console.log('📋 Buscando agendamentos para barbearia:', req.barbeariaId);
 
     try {
-        let query = 'SELECT * FROM agendamentos WHERE barbearia_id = $1';
-        let params = [req.barbeariaId];
+        const result = await pool.query(
+            'SELECT * FROM agendamentos WHERE barbearia_id = $1 ORDER BY data, hora',
+            [req.barbeariaId]
+        );
 
-        if (data) {
-            query += ' AND data = $2 ORDER BY hora';
-            params.push(data);
-        } else {
-            query += ' ORDER BY data, hora';
-        }
-
-        const result = await pool.query(query, params);
+        console.log(`✅ Encontrados ${result.rows.length} agendamentos`);
         res.json(result.rows);
     } catch (error) {
+        console.error('❌ Erro ao buscar:', error);
         res.status(500).json({ erro: error.message });
     }
 });
