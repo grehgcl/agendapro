@@ -20,7 +20,6 @@ const pool = new Pool({
 
 async function initDatabase() {
     try {
-        // Tabela barbearias
         await pool.query(`
             CREATE TABLE IF NOT EXISTS barbearias (
                 id SERIAL PRIMARY KEY,
@@ -37,7 +36,6 @@ async function initDatabase() {
         `);
         console.log('✅ Tabela barbearias OK');
 
-        // Tabela agendamentos
         await pool.query(`
             CREATE TABLE IF NOT EXISTS agendamentos (
                 id SERIAL PRIMARY KEY,
@@ -53,7 +51,6 @@ async function initDatabase() {
         `);
         console.log('✅ Tabela agendamentos OK');
 
-        // Tabela clientes
         await pool.query(`
             CREATE TABLE IF NOT EXISTS clientes (
                 id SERIAL PRIMARY KEY,
@@ -66,7 +63,6 @@ async function initDatabase() {
         `);
         console.log('✅ Tabela clientes OK');
 
-        // Tabela servicos
         await pool.query(`
             CREATE TABLE IF NOT EXISTS servicos (
                 id SERIAL PRIMARY KEY,
@@ -181,21 +177,25 @@ app.post('/api/login-admin', (req, res) => {
 // Dashboard
 app.get('/api/dashboard', verificarAcesso, async (req, res) => {
     try {
+        const hoje = new Date();
+        const ano = hoje.getFullYear();
+        const mes = hoje.getMonth() + 1;
+        const hojeStr = hoje.toISOString().split('T')[0];
+
         // Buscar todos agendamentos da barbearia
         const result = await pool.query(
             'SELECT * FROM agendamentos WHERE barbearia_id = $1 ORDER BY data, hora',
             [req.barbeariaId]
         );
 
-        // Buscar faturamento do mês
-        const hoje = new Date();
-        const ano = hoje.getFullYear();
-        const mes = hoje.getMonth() + 1;
-        const mesStr = `${ano}-${mes.toString().padStart(2, '0')}%`;
+        // Faturamento do mês (corrigido - sem LIKE)
+        const primeiroDia = `${ano}-${mes.toString().padStart(2, '0')}-01`;
+        const ultimoDia = new Date(ano, mes, 0).toISOString().split('T')[0];
 
         const fatMes = await pool.query(
-            'SELECT SUM(preco) as total FROM agendamentos WHERE barbearia_id = $1 AND data LIKE $2',
-            [req.barbeariaId, mesStr]
+            `SELECT COALESCE(SUM(preco), 0) as total FROM agendamentos 
+             WHERE barbearia_id = $1 AND data >= $2 AND data <= $3`,
+            [req.barbeariaId, primeiroDia, ultimoDia]
         );
 
         // Gerar próximos 7 dias
@@ -215,7 +215,6 @@ app.get('/api/dashboard', verificarAcesso, async (req, res) => {
         });
 
         // Faturamento de hoje
-        const hojeStr = hoje.toISOString().split('T')[0];
         const faturamentoHoje = agendamentosPorDia[hojeStr]?.reduce((sum, a) => sum + a.preco, 0) || 0;
 
         // Faturamento da semana
@@ -227,7 +226,7 @@ app.get('/api/dashboard', verificarAcesso, async (req, res) => {
             faturamento: {
                 dia: faturamentoHoje,
                 semana: faturamentoSemana,
-                mes: fatMes.rows[0]?.total || 0
+                mes: parseFloat(fatMes.rows[0]?.total) || 0
             },
             totalAgendamentos: agendamentos.length
         });
@@ -410,21 +409,25 @@ app.get('/api/planos', (req, res) => {
     ]);
 });
 
-// Faturamento do mês
+// Faturamento do mês (corrigido)
 app.get('/api/faturamento/mes', verificarAcesso, async (req, res) => {
     try {
         const hoje = new Date();
         const ano = hoje.getFullYear();
         const mes = hoje.getMonth() + 1;
-        const mesStr = `${ano}-${mes.toString().padStart(2, '0')}%`;
+
+        const primeiroDia = `${ano}-${mes.toString().padStart(2, '0')}-01`;
+        const ultimoDia = new Date(ano, mes, 0).toISOString().split('T')[0];
 
         const result = await pool.query(
-            'SELECT SUM(preco) as total FROM agendamentos WHERE barbearia_id = $1 AND data LIKE $2',
-            [req.barbeariaId, mesStr]
+            `SELECT COALESCE(SUM(preco), 0) as total FROM agendamentos 
+             WHERE barbearia_id = $1 AND data >= $2 AND data <= $3`,
+            [req.barbeariaId, primeiroDia, ultimoDia]
         );
 
-        res.json({ faturamento: result.rows[0]?.total || 0 });
+        res.json({ faturamento: parseFloat(result.rows[0]?.total) || 0 });
     } catch (error) {
+        console.error('Erro:', error);
         res.status(500).json({ erro: error.message });
     }
 });
