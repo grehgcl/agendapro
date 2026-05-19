@@ -693,7 +693,7 @@
                 const response = await fetchAPI('/dashboard');
                 const dados = await response.json();
 
-                console.log('Dados recebidos:', dados); // Para debug
+                console.log('Dados recebidos do servidor:', dados);
 
                 const hoje = new Date().toISOString().split('T')[0];
                 const agendamentosHoje = dados.agendamentos[hoje] || [];
@@ -701,24 +701,35 @@
 
                 document.getElementById('faturamentoDia').innerHTML = `R$ ${totalHoje.toFixed(2)}`;
                 document.getElementById('faturamentoSemana').innerHTML = `R$ ${dados.faturamento.semana.toFixed(2)}`;
-                document.getElementById('faturamentoMes').innerHTML = `R$ ${dados.faturamento.mes.toFixed(2)}`;
                 document.getElementById('totalDia').innerHTML = `${agendamentosHoje.length} agendamentos`;
                 document.getElementById('totalSemana').innerHTML = `${dados.totalAgendamentos} agendamentos`;
 
+                // Atualizar faturamento do mês se existir
+                if (dados.faturamento.mes !== undefined) {
+                    document.getElementById('faturamentoMes').innerHTML = `R$ ${dados.faturamento.mes.toFixed(2)}`;
+                }
+
                 let html = '<div class="semana-scroll"><div class="semana-grid">';
 
+                // Para cada dia da semana
                 for (const data of dados.semana) {
+                    // Buscar agendamentos deste dia específico
                     const agendamentos = dados.agendamentos[data] || [];
                     const isHoje = data === hoje;
 
                     // Formatar data para exibição
-                    const partes = data.split('-');
-                    const dataObj = new Date(partes[0], partes[1] - 1, partes[2]);
+                    const [ano, mes, dia] = data.split('-');
+                    const dataObj = new Date(parseInt(ano), parseInt(mes) - 1, parseInt(dia));
                     const diasSemana = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
                     const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
                     const nomeDia = diasSemana[dataObj.getDay()];
-                    const diaNum = parseInt(partes[2]);
-                    const nomeMes = meses[parseInt(partes[1]) - 1];
+                    const diaNum = parseInt(dia);
+                    const nomeMes = meses[parseInt(mes) - 1];
+
+                    console.log(`Dia ${data} tem ${agendamentos.length} agendamentos`);
+                    if (agendamentos.length > 0) {
+                        console.log('Agendamentos:', agendamentos);
+                    }
 
                     html += `
                 <div class="dia-card">
