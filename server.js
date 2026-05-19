@@ -348,6 +348,15 @@ app.get('/api/admin/barbearias', async (req, res) => {
     }
 });
 
+// Planos
+app.get('/api/planos', (req, res) => {
+    res.json([
+        { id: 'mensal', nome: 'Plano Mensal', preco: 49.90, descricao: 'Ideal para barbearias em crescimento' },
+        { id: 'trimestral', nome: 'Plano Trimestral', preco: 129.90, descricao: 'Economize 15%' },
+        { id: 'anual', nome: 'Plano Anual', preco: 499.90, descricao: 'Economize 30%' }
+    ]);
+});
+
 // Iniciar servidor
 initDatabase().then(() => {
     app.listen(PORT, () => {
