@@ -1,5 +1,5 @@
 const express = require('express');
-const sqlite3 = require('sqlite3').verbose();
+const { query, isProd } = require('./db');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -21,117 +21,109 @@ const dbPath = isRailway ? '/data/agendapro.db' : path.join(__dirname, 'agendapr
 
 console.log('📁 Banco em:', dbPath);
 
-const db = new sqlite3.Database(dbPath, (err) => {
-    if (err) {
-        console.error('❌ Erro SQLite:', err.message);
-        process.exit(1);
-    } else {
-        console.log('✅ Banco SQLite conectado!');
-    }
-});
 
 // ============= CRIAR TABELAS =============
-db.serialize(() => {
-    db.run(`CREATE TABLE IF NOT EXISTS barbearias (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nome TEXT NOT NULL,
-        cnpj TEXT,
-        telefone TEXT,
-        email TEXT UNIQUE NOT NULL,
-        senha TEXT NOT NULL,
-        plano TEXT DEFAULT 'trial',
-        data_expiracao DATETIME,
-        status TEXT DEFAULT 'ativo',
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )`);
+async function criarTabelas() {
+    // PostgreSQL usa SERIAL no lugar de AUTOINCREMENT
+    // e TIMESTAMP no lugar de DATETIME
 
-    db.run(`CREATE TABLE IF NOT EXISTS agendamentos (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        barbearia_id INTEGER NOT NULL,
-        nome TEXT NOT NULL,
-        servico TEXT NOT NULL,
-        preco REAL NOT NULL,
-        data TEXT NOT NULL,
-        hora TEXT NOT NULL,
-        telefone TEXT,
-        status TEXT DEFAULT 'agendado',
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (barbearia_id) REFERENCES barbearias(id)
-    )`);
+    const idType = isProd ? 'SERIAL PRIMARY KEY' : 'INTEGER PRIMARY KEY AUTOINCREMENT';
+    const dateType = isProd ? 'TIMESTAMP' : 'DATETIME';
 
-    db.run(`CREATE TABLE IF NOT EXISTS clientes (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        barbearia_id INTEGER NOT NULL,
-        nome TEXT NOT NULL,
-        email TEXT,
-        telefone TEXT,
-        data_cadastro DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (barbearia_id) REFERENCES barbearias(id)
-    )`);
+    await query(`
+        CREATE TABLE IF NOT EXISTS barbearias (
+            id ${idType},
+            nome TEXT NOT NULL,
+            cnpj TEXT,
+            telefone TEXT,
+            email TEXT UNIQUE NOT NULL,
+            senha TEXT NOT NULL,
+            plano TEXT DEFAULT 'trial',
+            data_expiracao ${dateType},
+            status TEXT DEFAULT 'ativo',
+            created_at ${dateType} DEFAULT CURRENT_TIMESTAMP
+        )
+    `);
 
-    db.run(`CREATE TABLE IF NOT EXISTS servicos (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        barbearia_id INTEGER NOT NULL,
-        nome TEXT NOT NULL,
-        descricao TEXT,
-        preco REAL NOT NULL,
-        duracao INTEGER DEFAULT 30,
-        FOREIGN KEY (barbearia_id) REFERENCES barbearias(id)
-    )`);
+    await query(`
+        CREATE TABLE IF NOT EXISTS agendamentos (
+            id ${idType},
+            barbearia_id INTEGER NOT NULL,
+            nome TEXT NOT NULL,
+            servico TEXT NOT NULL,
+            preco REAL NOT NULL,
+            data TEXT NOT NULL,
+            hora TEXT NOT NULL,
+            telefone TEXT,
+            status TEXT DEFAULT 'agendado',
+            created_at ${dateType} DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (barbearia_id) REFERENCES barbearias(id)
+        )
+    `);
 
-    db.run(`CREATE TABLE IF NOT EXISTS metas (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        barbearia_id INTEGER NOT NULL,
-        ano INTEGER NOT NULL,
-        mes INTEGER NOT NULL,
-        valor REAL DEFAULT 0,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        UNIQUE(barbearia_id, ano, mes),
-        FOREIGN KEY (barbearia_id) REFERENCES barbearias(id)
-    )`);
+    await query(`
+        CREATE TABLE IF NOT EXISTS clientes (
+            id ${idType},
+            barbearia_id INTEGER NOT NULL,
+            nome TEXT NOT NULL,
+            email TEXT,
+            telefone TEXT,
+            data_cadastro ${dateType} DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (barbearia_id) REFERENCES barbearias(id)
+        )
+    `);
 
-    db.run(`CREATE TABLE IF NOT EXISTS despesas (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        barbearia_id INTEGER NOT NULL,
-        descricao TEXT NOT NULL,
-        valor REAL NOT NULL,
-        categoria TEXT DEFAULT 'outros',
-        data DATE NOT NULL,
-        pagamento TEXT DEFAULT 'pago',
-        observacao TEXT,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (barbearia_id) REFERENCES barbearias(id)
-    )`);
+    await query(`
+        CREATE TABLE IF NOT EXISTS servicos (
+            id ${idType},
+            barbearia_id INTEGER NOT NULL,
+            nome TEXT NOT NULL,
+            descricao TEXT,
+            preco REAL NOT NULL,
+            duracao INTEGER DEFAULT 30,
+            FOREIGN KEY (barbearia_id) REFERENCES barbearias(id)
+        )
+    `);
 
-    db.run(`CREATE TABLE IF NOT EXISTS metas (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    barbearia_id INTEGER NOT NULL,
-    ano INTEGER NOT NULL,
-    mes INTEGER NOT NULL,
-    valor REAL NOT NULL,
-    UNIQUE(barbearia_id, ano, mes)
-)`);
+    await query(`
+        CREATE TABLE IF NOT EXISTS despesas (
+            id ${idType},
+            barbearia_id INTEGER NOT NULL,
+            descricao TEXT NOT NULL,
+            valor REAL NOT NULL,
+            categoria TEXT DEFAULT 'outros',
+            data DATE NOT NULL,
+            pagamento TEXT DEFAULT 'pago',
+            observacao TEXT,
+            created_at ${dateType} DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (barbearia_id) REFERENCES barbearias(id)
+        )
+    `);
 
-    console.log('✅ Tabelas SQLite criadas/verificadas');
-});
+    await query(`
+        CREATE TABLE IF NOT EXISTS metas (
+            id ${idType},
+            barbearia_id INTEGER NOT NULL,
+            ano INTEGER NOT NULL,
+            mes INTEGER NOT NULL,
+            valor REAL NOT NULL,
+            created_at ${dateType} DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(barbearia_id, ano, mes),
+            FOREIGN KEY (barbearia_id) REFERENCES barbearias(id)
+        )
+    `);
+
+    console.log('✅ Tabelas criadas/verificadas');
+}
+
+criarTabelas();
 
 // ============= HELPERS =============
-const query = (sql, params = []) => {
-    return new Promise((resolve, reject) => {
-        db.all(sql, params, (err, rows) => {
-            if (err) reject(err);
-            else resolve(rows);
-        });
-    });
-};
-
-const run = (sql, params = []) => {
-    return new Promise((resolve, reject) => {
-        db.run(sql, params, function (err) {
-            if (err) reject(err);
-            else resolve({ lastID: this.lastID, changes: this.changes });
-        });
-    });
+// Converte? em $1, $2 automaticamente no Railway
+const sql = (querySQL) => {
+    if (!isProd) return querySQL;
+    let i = 0;
+    return querySQL.replace(/\?/g, () => `$${++i}`);
 };
 
 // ============= MIDDLEWARE =============
@@ -144,7 +136,7 @@ const verificarAcesso = async (req, res, next) => {
 
     try {
         const decoded = jwt.verify(token, JWT_SECRET);
-        const barbearia = await query('SELECT * FROM barbearias WHERE id =?', [decoded.id]);
+        const barbearia = await query(sql('SELECT * FROM barbearias WHERE id =?'), [decoded.id]);
 
         if (barbearia.length === 0) {
             return res.status(401).json({ erro: 'Barbearia não encontrada' });
@@ -167,7 +159,7 @@ app.post('/api/cadastrar-barbearia', async (req, res) => {
     }
 
     try {
-        const existe = await query('SELECT id FROM barbearias WHERE email =?', [email]);
+        const existe = await query(sql('SELECT id FROM barbearias WHERE email =?'), [email]);
         if (existe.length > 0) {
             return res.status(400).json({ erro: 'Este email já está cadastrado!' });
         }
@@ -176,24 +168,24 @@ app.post('/api/cadastrar-barbearia', async (req, res) => {
         const dataExpiracao = new Date();
         dataExpiracao.setDate(dataExpiracao.getDate() + 14);
 
-        const result = await run(
+        const result = await query(sql(
             `INSERT INTO barbearias (nome, email, senha, telefone, cnpj, data_expiracao)
-             VALUES (?,?,?,?,?,?)`,
-            [nome, email, senhaHash, telefone || '', cnpj || '', dataExpiracao.toISOString()]
-        );
+             VALUES (?,?,?,?,?,?) RETURNING id`
+        ), [nome, email, senhaHash, telefone || '', cnpj || '', dataExpiracao.toISOString()]);
 
-        await run(
+        const newId = result[0].id;
+
+        await query(sql(
             `INSERT INTO servicos (barbearia_id, nome, preco, duracao) VALUES
             (?, 'Corte de Cabelo', 35, 30),
             (?, 'Barba', 25, 30),
-            (?, 'Corte + Barba', 55, 60)`,
-            [result.lastID, result.lastID, result.lastID]
-        );
+            (?, 'Corte + Barba', 55, 60)`
+        ), [newId, newId, newId]);
 
-        const token = jwt.sign({ id: result.lastID }, JWT_SECRET, { expiresIn: '7d' });
+        const token = jwt.sign({ id: newId }, JWT_SECRET, { expiresIn: '7d' });
 
         res.json({
-            id: result.lastID,
+            id: newId,
             token,
             mensagem: '✅ Cadastrado com sucesso!'
         });
@@ -207,7 +199,7 @@ app.post('/api/login-barbearia', async (req, res) => {
     const { email, senha } = req.body;
 
     try {
-        const result = await query('SELECT * FROM barbearias WHERE email =?', [email]);
+        const result = await query(sql('SELECT * FROM barbearias WHERE email =?'), [email]);
 
         if (result.length === 0) {
             return res.status(401).json({ erro: 'Email ou senha inválidos!' });
@@ -240,14 +232,14 @@ app.get('/api/dashboard', verificarAcesso, async (req, res) => {
         const mesAtual = new Date().toISOString().slice(0, 7);
 
         const [faturamento, agendamentos, clientes, meta] = await Promise.all([
-            query(`SELECT SUM(preco) as total FROM agendamentos
-                   WHERE barbearia_id =? AND data LIKE? AND status!= 'cancelado'`,
+            query(sql(`SELECT SUM(preco) as total FROM agendamentos
+                   WHERE barbearia_id =? AND data LIKE? AND status!= 'cancelado'`),
                 [req.barbeariaId, `${mesAtual}%`]),
-            query(`SELECT COUNT(*) as total FROM agendamentos
-                   WHERE barbearia_id =? AND data LIKE?`,
+            query(sql(`SELECT COUNT(*) as total FROM agendamentos
+                   WHERE barbearia_id =? AND data LIKE?`),
                 [req.barbeariaId, `${mesAtual}%`]),
-            query(`SELECT COUNT(*) as total FROM clientes WHERE barbearia_id =?`, [req.barbeariaId]),
-            query(`SELECT valor FROM metas WHERE barbearia_id =? AND ano =? AND mes =?`,
+            query(sql(`SELECT COUNT(*) as total FROM clientes WHERE barbearia_id =?`), [req.barbeariaId]),
+            query(sql(`SELECT valor FROM metas WHERE barbearia_id =? AND ano =? AND mes =?`),
                 [req.barbeariaId, new Date().getFullYear(), new Date().getMonth() + 1])
         ]);
 
@@ -267,7 +259,7 @@ app.get('/api/dashboard', verificarAcesso, async (req, res) => {
 app.get('/api/servicos', verificarAcesso, async (req, res) => {
     try {
         const servicos = await query(
-            'SELECT * FROM servicos WHERE barbearia_id =? ORDER BY id DESC',
+            sql('SELECT * FROM servicos WHERE barbearia_id =? ORDER BY id DESC'),
             [req.barbeariaId]
         );
         res.json(servicos);
@@ -284,11 +276,10 @@ app.post('/api/servicos', verificarAcesso, async (req, res) => {
     }
 
     try {
-        const result = await run(
-            'INSERT INTO servicos (barbearia_id, nome, preco, duracao, descricao) VALUES (?,?,?,?,?)',
-            [req.barbeariaId, nome, preco, duracao || 30, descricao || '']
-        );
-        res.json({ id: result.lastID, mensagem: 'Serviço criado' });
+        const result = await query(sql(
+            'INSERT INTO servicos (barbearia_id, nome, preco, duracao, descricao) VALUES (?,?,?,?,?) RETURNING id'
+        ), [req.barbeariaId, nome, preco, duracao || 30, descricao || '']);
+        res.json({ id: result[0].id, mensagem: 'Serviço criado' });
     } catch (error) {
         res.status(500).json({ erro: error.message });
     }
@@ -297,11 +288,10 @@ app.post('/api/servicos', verificarAcesso, async (req, res) => {
 // ============= ROTAS AGENDAMENTOS =============
 app.get('/api/agendamentos', verificarAcesso, async (req, res) => {
     try {
-        const agendamentos = await query(
+        const agendamentos = await query(sql(
             `SELECT * FROM agendamentos WHERE barbearia_id =?
-             ORDER BY data DESC, hora DESC LIMIT 100`,
-            [req.barbeariaId]
-        );
+             ORDER BY data DESC, hora DESC LIMIT 100`
+        ), [req.barbeariaId]);
         res.json(agendamentos);
     } catch (error) {
         res.status(500).json({ erro: error.message });
@@ -316,12 +306,11 @@ app.post('/api/agendamentos', verificarAcesso, async (req, res) => {
     }
 
     try {
-        const result = await run(
+        const result = await query(sql(
             `INSERT INTO agendamentos (barbearia_id, nome, servico, preco, data, hora, telefone)
-             VALUES (?,?,?,?,?,?,?)`,
-            [req.barbeariaId, nome, servico, preco, data, hora, telefone || '']
-        );
-        res.json({ id: result.lastID, mensagem: 'Agendamento criado' });
+             VALUES (?,?,?,?,?,?,?) RETURNING id`
+        ), [req.barbeariaId, nome, servico, preco, data, hora, telefone || '']);
+        res.json({ id: result[0].id, mensagem: 'Agendamento criado' });
     } catch (error) {
         res.status(500).json({ erro: error.message });
     }
@@ -331,7 +320,7 @@ app.post('/api/agendamentos', verificarAcesso, async (req, res) => {
 app.get('/api/clientes', verificarAcesso, async (req, res) => {
     try {
         const clientes = await query(
-            'SELECT * FROM clientes WHERE barbearia_id =? ORDER BY nome',
+            sql('SELECT * FROM clientes WHERE barbearia_id =? ORDER BY nome'),
             [req.barbeariaId]
         );
         res.json(clientes);
@@ -348,13 +337,12 @@ app.post('/api/clientes', verificarAcesso, async (req, res) => {
     }
 
     try {
-        const result = await run(
-            'INSERT INTO clientes (barbearia_id, nome, telefone, email) VALUES (?,?,?,?)',
-            [req.barbeariaId, nome, telefone, email || null]
-        );
+        const result = await query(sql(
+            'INSERT INTO clientes (barbearia_id, nome, telefone, email) VALUES (?,?,?,?) RETURNING id'
+        ), [req.barbeariaId, nome, telefone, email || null]);
 
         res.status(201).json({
-            id: result.lastID,
+            id: result[0].id,
             mensagem: 'Cliente cadastrado'
         });
     } catch (error) {
@@ -411,7 +399,7 @@ app.get('/api/admin/barbearias', verificarAdmin, async (req, res) => {
 
 app.get('/api/admin/barbearias/:id', verificarAdmin, async (req, res) => {
     try {
-        const result = await query('SELECT * FROM barbearias WHERE id =?', [req.params.id]);
+        const result = await query(sql('SELECT * FROM barbearias WHERE id =?'), [req.params.id]);
         if (result.length === 0) return res.status(404).json({ erro: 'Não encontrada' });
         delete result[0].senha;
         res.json(result[0]);
@@ -425,19 +413,19 @@ app.put('/api/admin/barbearias/:id', verificarAdmin, async (req, res) => {
     const { id } = req.params;
 
     try {
-        let sql = 'UPDATE barbearias SET nome =?, email =?, telefone =?, cnpj =?, plano =?';
+        let sqlQuery = 'UPDATE barbearias SET nome =?, email =?, telefone =?, cnpj =?, plano =?';
         let params = [nome, email, telefone, cnpj, plano];
 
         if (senha && senha.trim() !== '') {
             const senhaHash = await bcrypt.hash(senha, 10);
-            sql += ', senha =?';
+            sqlQuery += ', senha =?';
             params.push(senhaHash);
         }
 
-        sql += ' WHERE id =?';
+        sqlQuery += ' WHERE id =?';
         params.push(id);
 
-        await run(sql, params);
+        await query(sql(sqlQuery), params);
         res.json({ mensagem: 'Barbearia atualizada' });
     } catch (error) {
         res.status(500).json({ erro: error.message });
@@ -450,16 +438,15 @@ app.put('/api/admin/barbearias/:id/status', verificarAdmin, async (req, res) => 
 
     try {
         if (dias_extras) {
-            const atual = await query('SELECT data_expiracao FROM barbearias WHERE id =?', [id]);
+            const atual = await query(sql('SELECT data_expiracao FROM barbearias WHERE id =?'), [id]);
             let novaData = new Date(atual[0].data_expiracao || new Date());
             novaData.setDate(novaData.getDate() + parseInt(dias_extras));
 
-            await run(
-                'UPDATE barbearias SET status =?, data_expiracao =? WHERE id =?',
-                [status, novaData.toISOString(), id]
-            );
+            await query(sql(
+                'UPDATE barbearias SET status =?, data_expiracao =? WHERE id =?'
+            ), [status, novaData.toISOString(), id]);
         } else {
-            await run('UPDATE barbearias SET status =? WHERE id =?', [status, id]);
+            await query(sql('UPDATE barbearias SET status =? WHERE id =?'), [status, id]);
         }
 
         res.json({ mensagem: 'Status atualizado' });
@@ -472,12 +459,12 @@ app.delete('/api/admin/barbearias/:id', verificarAdmin, async (req, res) => {
     const { id } = req.params;
 
     try {
-        await run('DELETE FROM agendamentos WHERE barbearia_id =?', [id]);
-        await run('DELETE FROM clientes WHERE barbearia_id =?', [id]);
-        await run('DELETE FROM servicos WHERE barbearia_id =?', [id]);
-        await run('DELETE FROM metas WHERE barbearia_id =?', [id]);
-        await run('DELETE FROM despesas WHERE barbearia_id =?', [id]);
-        await run('DELETE FROM barbearias WHERE id =?', [id]);
+        await query(sql('DELETE FROM agendamentos WHERE barbearia_id =?'), [id]);
+        await query(sql('DELETE FROM clientes WHERE barbearia_id =?'), [id]);
+        await query(sql('DELETE FROM servicos WHERE barbearia_id =?'), [id]);
+        await query(sql('DELETE FROM metas WHERE barbearia_id =?'), [id]);
+        await query(sql('DELETE FROM despesas WHERE barbearia_id =?'), [id]);
+        await query(sql('DELETE FROM barbearias WHERE id =?'), [id]);
 
         res.json({ mensagem: 'Barbearia excluída com sucesso' });
     } catch (error) {
@@ -489,7 +476,7 @@ app.post('/api/admin/barbearias/:id/reset-senha', verificarAdmin, async (req, re
     const novaSenha = Math.random().toString(36).slice(-8);
     const senhaHash = await bcrypt.hash(novaSenha, 10);
 
-    await run('UPDATE barbearias SET senha =? WHERE id =?', [senhaHash, req.params.id]);
+    await query(sql('UPDATE barbearias SET senha =? WHERE id =?'), [senhaHash, req.params.id]);
     res.json({ mensagem: 'Senha resetada', novaSenha });
 });
 
@@ -500,61 +487,71 @@ app.use((err, req, res, next) => {
 });
 
 // BUSCAR META DO MÊS
-app.get('/api/meta', (req, res) => {
-    const barbeariaId = req.headers['authorization']?.replace('Bearer ', '');
+app.get('/api/meta', verificarAcesso, async (req, res) => {
     const { ano, mes } = req.query;
 
-    if (!barbeariaId || !ano || !mes) {
+    if (!ano || !mes) {
         return res.status(400).json({ erro: 'Dados incompletos' });
     }
 
-    db.get(
-        'SELECT * FROM metas WHERE barbearia_id = ? AND ano = ? AND mes = ?',
-        [barbeariaId, ano, mes],
-        (err, row) => {
-            if (err) return res.status(500).json({ erro: 'Erro no banco' });
-            res.json({ valor: row ? row.valor : 0 });
-        }
-    );
+    try {
+        const result = await query(sql(
+            'SELECT * FROM metas WHERE barbearia_id =? AND ano =? AND mes =?'
+        ), [req.barbeariaId, ano, mes]);
+        res.json({ valor: result[0] ? result[0].valor : 0 });
+    } catch (error) {
+        res.status(500).json({ erro: 'Erro no banco' });
+    }
 });
 
 // SALVAR/ATUALIZAR META
-app.post('/api/meta', (req, res) => {
-    const barbeariaId = req.headers['authorization']?.replace('Bearer ', '');
+app.post('/api/meta', verificarAcesso, async (req, res) => {
     const { ano, mes, valor } = req.body;
 
-    if (!barbeariaId || !ano || !mes || valor === undefined) {
+    if (!ano || !mes || valor === undefined) {
         return res.status(400).json({ erro: 'Dados incompletos' });
     }
 
-    // UPSERT: insere ou atualiza se já existir
-    db.run(
-        `INSERT INTO metas (barbearia_id, ano, mes, valor) 
-         VALUES (?, ?, ?, ?) 
-         ON CONFLICT(barbearia_id, ano, mes) 
-         DO UPDATE SET valor = ?`,
-        [barbeariaId, ano, mes, valor, valor],
-        function (err) {
-            if (err) {
-                console.error('Erro ao salvar meta:', err);
-                return res.status(500).json({ erro: 'Erro ao salvar meta' });
-            }
-            res.json({ sucesso: true, id: this.lastID });
-        }
-    );
+    try {
+        const sqlQuery = isProd
+            ? `INSERT INTO metas (barbearia_id, ano, mes, valor) VALUES ($1, $2, $3, $4)
+               ON CONFLICT(barbearia_id, ano, mes) DO UPDATE SET valor = $4 RETURNING id`
+            : `INSERT INTO metas (barbearia_id, ano, mes, valor) VALUES (?,?,?,?)
+               ON CONFLICT(barbearia_id, ano, mes) DO UPDATE SET valor =?`;
+
+        const params = isProd
+            ? [req.barbeariaId, ano, mes, valor]
+            : [req.barbeariaId, ano, mes, valor, valor];
+
+        await query(sqlQuery, params);
+        res.json({ sucesso: true });
+    } catch (error) {
+        console.error('Erro ao salvar meta:', error);
+        res.status(500).json({ erro: 'Erro ao salvar meta' });
+    }
+});
+
+// PLANO ATUAL
+app.get('/api/planos/atual', verificarAcesso, async (req, res) => {
+    try {
+        const b = await query(sql('SELECT plano FROM barbearias WHERE id =?'), [req.barbeariaId]);
+        res.json({ nome: b[0]?.plano || 'Grátis', limite: 'Sem limite' });
+    } catch (error) {
+        res.status(500).json({ erro: error.message });
+    }
 });
 
 // ============= SERVIDOR =============
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Servidor rodando na porta ${PORT}`);
-    console.log(`📁 SQLite: ${dbPath}`);
+    console.log(`📁 Banco: ${isProd ? 'PostgreSQL' : 'SQLite'}`);
 });
 
 // ============= ROTAS DESPESAS =============
 app.get('/api/despesas', verificarAcesso, async (req, res) => {
     try {
         const despesas = await query(
-            'SELECT * FROM despesas WHERE barbearia_id =? ORDER BY data DESC',
+            sql('SELECT * FROM despesas WHERE barbearia_id =? ORDER BY data DESC'),
             [req.barbeariaId]
         );
         res.json(despesas);
@@ -571,14 +568,13 @@ app.post('/api/despesas', verificarAcesso, async (req, res) => {
     }
 
     try {
-        const result = await run(
-            `INSERT INTO despesas (barbearia_id, descricao, valor, categoria, data, pagamento, observacao) 
-             VALUES (?,?,?,?,?,?,?)`,
-            [req.barbeariaId, descricao, valor, categoria || 'outros', data, pagamento || 'pago', observacao || '']
-        );
+        const result = await query(sql(
+            `INSERT INTO despesas (barbearia_id, descricao, valor, categoria, data, pagamento, observacao)
+             VALUES (?,?,?,?,?,?,?) RETURNING id`
+        ), [req.barbeariaId, descricao, valor, categoria || 'outros', data, pagamento || 'pago', observacao || '']);
 
         res.status(201).json({
-            id: result.lastID,
+            id: result[0].id,
             mensagem: 'Despesa cadastrada'
         });
     } catch (error) {

@@ -603,6 +603,10 @@
             <button class="btn-quick" onclick="location.href='servicos-barbearia.html'">
                 ✂️ Serviços
             </button>
+            <button class="btn-quick" onclick="location.href='planos.html'"
+                style="background: #fef3c7; color: #92400e;">
+                💎 Planos
+            </button>
         </div>
 
         <!-- 3 KPIs PRINCIPAIS -->
@@ -683,6 +687,26 @@
                     <div class="meta-stats">
                         <span><strong id="metaPercentual">0%</strong></span>
                         <span>Faltam <strong id="metaFalta">R$ 0</strong></span>
+                    </div>
+                </div>
+                <div class="card" id="planoCard">
+                    <div class="card-header">
+                        <h3>💎 Plano Atual</h3>
+                        <a href="planos.html">Upgrade →</a>
+                    </div>
+                    <div id="planoInfo">
+                        <div style="text-align: center; padding: 16px 0;">
+                            <div style="font-size: 24px; font-weight: 700; color: #8b5cf6; margin-bottom: 8px;"
+                                id="planoNome">
+                                Carregando...
+                            </div>
+                            <div style="font-size: 12px; color: #64748b; margin-bottom: 16px;" id="planoLimite">
+                                -
+                            </div>
+                            <button class="btn-quick" style="width: 100%;" onclick="location.href='planos.html'">
+                                Ver Planos
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -835,6 +859,20 @@
                     </div>
                 `).join('');
                 document.getElementById('clientesRecentesList').innerHTML = clientesHtml || '<div class="empty-state"><p>📭 Nenhum cliente</p><button onclick="location.href=\'clientes-barbearia.html\'">Cadastrar Cliente</button></div>';
+
+                // 5. Carrega Planos
+                try {
+                    const planoRes = await fetchAPI('/api/planos/atual');
+                    const plano = await planoRes.json();
+
+                    document.getElementById('planoNome').textContent = plano.nome;
+                    document.getElementById('planoLimite').textContent = plano.limite;
+
+                } catch (e) {
+                    document.getElementById('planoNome').textContent = 'Grátis';
+                    document.getElementById('planoLimite').textContent = 'Erro ao carregar';
+                }
+
 
                 // Serviços populares
                 const servicoCount = {};
