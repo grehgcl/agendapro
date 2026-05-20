@@ -103,15 +103,6 @@ db.serialize(() => {
         FOREIGN KEY (barbearia_id) REFERENCES barbearias(id)
     )`);
 
-    db.run(`CREATE TABLE IF NOT EXISTS metas (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    barbearia_id INTEGER NOT NULL,
-    ano INTEGER NOT NULL,
-    mes INTEGER NOT NULL,
-    valor REAL NOT NULL,
-    UNIQUE(barbearia_id, ano, mes)
-)`);
-
     console.log('✅ Tabelas SQLite criadas/verificadas');
 });
 
@@ -340,29 +331,6 @@ app.get('/api/clientes', verificarAcesso, async (req, res) => {
     }
 });
 
-app.post('/api/clientes', verificarAcesso, async (req, res) => {
-    const { nome, telefone, email } = req.body;
-
-    if (!nome || !telefone) {
-        return res.status(400).json({ erro: 'Nome e telefone são obrigatórios' });
-    }
-
-    try {
-        const result = await run(
-            'INSERT INTO clientes (barbearia_id, nome, telefone, email) VALUES (?,?,?,?)',
-            [req.barbeariaId, nome, telefone, email || null]
-        );
-
-        res.status(201).json({
-            id: result.lastID,
-            mensagem: 'Cliente cadastrado'
-        });
-    } catch (error) {
-        console.error('❌ Erro cliente:', error);
-        res.status(500).json({ erro: 'Erro ao salvar cliente' });
-    }
-});
-
 // ============= HEALTH CHECK =============
 app.get('/', (req, res) => {
     res.send('🚀 AgendaPro online!');
@@ -372,10 +340,25 @@ app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// ============= ERROR HANDLER =============
+app.use((err, req, res, next) => {
+    console.error('❌ Erro:', err);
+    res.status(500).json({ erro: 'Erro interno do servidor' });
+});
+
+// ============= SERVIDOR =============
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Servidor rodando na porta ${PORT}`);
+    console.log(`📁 SQLite: ${dbPath}`);
+});
+
 // ============= ROTAS ADMIN =============
+
+// Login do Super Admin - senha fixa por enquanto
 app.post('/api/login-admin', async (req, res) => {
     const { username, senha } = req.body;
 
+    // Troca pra algo mais seguro depois
     if (username === 'superadmin' && senha === 'admin123') {
         const token = jwt.sign({ admin: true, user: 'superadmin' }, JWT_SECRET, { expiresIn: '8h' });
         res.json({ token, mensagem: 'Login admin ok' });
@@ -384,10 +367,13 @@ app.post('/api/login-admin', async (req, res) => {
     }
 });
 
+// Middleware só pra admin
+// Middleware só pra admin - VERSÃO CORRIGIDA
 const verificarAdmin = (req, res, next) => {
     const authHeader = req.headers['authorization'];
     if (!authHeader) return res.status(401).json({ erro: 'Token não fornecido' });
 
+    // Tira o "Bearer " da frente
     const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : authHeader;
 
     try {
@@ -400,6 +386,7 @@ const verificarAdmin = (req, res, next) => {
     }
 };
 
+// Listar todas barbearias
 app.get('/api/admin/barbearias', verificarAdmin, async (req, res) => {
     try {
         const barbearias = await query('SELECT id, nome, email, telefone, cnpj, plano, data_expiracao, status FROM barbearias ORDER BY id DESC');
@@ -409,17 +396,19 @@ app.get('/api/admin/barbearias', verificarAdmin, async (req, res) => {
     }
 });
 
+// Buscar 1 barbearia
 app.get('/api/admin/barbearias/:id', verificarAdmin, async (req, res) => {
     try {
         const result = await query('SELECT * FROM barbearias WHERE id =?', [req.params.id]);
         if (result.length === 0) return res.status(404).json({ erro: 'Não encontrada' });
-        delete result[0].senha;
+        delete result[0].senha; // não manda senha
         res.json(result[0]);
     } catch (error) {
         res.status(500).json({ erro: error.message });
     }
 });
 
+// Editar barbearia
 app.put('/api/admin/barbearias/:id', verificarAdmin, async (req, res) => {
     const { nome, email, telefone, cnpj, senha, plano } = req.body;
     const { id } = req.params;
@@ -428,6 +417,7 @@ app.put('/api/admin/barbearias/:id', verificarAdmin, async (req, res) => {
         let sql = 'UPDATE barbearias SET nome =?, email =?, telefone =?, cnpj =?, plano =?';
         let params = [nome, email, telefone, cnpj, plano];
 
+        // Só atualiza senha se foi enviada
         if (senha && senha.trim() !== '') {
             const senhaHash = await bcrypt.hash(senha, 10);
             sql += ', senha =?';
@@ -444,12 +434,14 @@ app.put('/api/admin/barbearias/:id', verificarAdmin, async (req, res) => {
     }
 });
 
+// Alterar status + adicionar dias
 app.put('/api/admin/barbearias/:id/status', verificarAdmin, async (req, res) => {
     const { status, dias_extras } = req.body;
     const { id } = req.params;
 
     try {
         if (dias_extras) {
+            // Pega data atual de expiração e soma dias
             const atual = await query('SELECT data_expiracao FROM barbearias WHERE id =?', [id]);
             let novaData = new Date(atual[0].data_expiracao || new Date());
             novaData.setDate(novaData.getDate() + parseInt(dias_extras));
@@ -468,10 +460,12 @@ app.put('/api/admin/barbearias/:id/status', verificarAdmin, async (req, res) => 
     }
 });
 
+// Excluir barbearia
 app.delete('/api/admin/barbearias/:id', verificarAdmin, async (req, res) => {
     const { id } = req.params;
 
     try {
+        // Apaga tudo relacionado
         await run('DELETE FROM agendamentos WHERE barbearia_id =?', [id]);
         await run('DELETE FROM clientes WHERE barbearia_id =?', [id]);
         await run('DELETE FROM servicos WHERE barbearia_id =?', [id]);
@@ -485,106 +479,13 @@ app.delete('/api/admin/barbearias/:id', verificarAdmin, async (req, res) => {
     }
 });
 
+// Rota nova no server.js
 app.post('/api/admin/barbearias/:id/reset-senha', verificarAdmin, async (req, res) => {
-    const novaSenha = Math.random().toString(36).slice(-8);
+    const novaSenha = Math.random().toString(36).slice(-8); // gera: "k3j9h2x1"
     const senhaHash = await bcrypt.hash(novaSenha, 10);
 
     await run('UPDATE barbearias SET senha =? WHERE id =?', [senhaHash, req.params.id]);
     res.json({ mensagem: 'Senha resetada', novaSenha });
-});
-
-// ============= ERROR HANDLER =============
-app.use((err, req, res, next) => {
-    console.error('❌ Erro:', err);
-    res.status(500).json({ erro: 'Erro interno do servidor' });
-});
-
-// BUSCAR META DO MÊS
-app.get('/api/meta', (req, res) => {
-    const barbeariaId = req.headers['authorization']?.replace('Bearer ', '');
-    const { ano, mes } = req.query;
-
-    if (!barbeariaId || !ano || !mes) {
-        return res.status(400).json({ erro: 'Dados incompletos' });
-    }
-
-    db.get(
-        'SELECT * FROM metas WHERE barbearia_id = ? AND ano = ? AND mes = ?',
-        [barbeariaId, ano, mes],
-        (err, row) => {
-            if (err) return res.status(500).json({ erro: 'Erro no banco' });
-            res.json({ valor: row ? row.valor : 0 });
-        }
-    );
-});
-
-// SALVAR/ATUALIZAR META
-app.post('/api/meta', (req, res) => {
-    const barbeariaId = req.headers['authorization']?.replace('Bearer ', '');
-    const { ano, mes, valor } = req.body;
-
-    if (!barbeariaId || !ano || !mes || valor === undefined) {
-        return res.status(400).json({ erro: 'Dados incompletos' });
-    }
-
-    // UPSERT: insere ou atualiza se já existir
-    db.run(
-        `INSERT INTO metas (barbearia_id, ano, mes, valor) 
-         VALUES (?, ?, ?, ?) 
-         ON CONFLICT(barbearia_id, ano, mes) 
-         DO UPDATE SET valor = ?`,
-        [barbeariaId, ano, mes, valor, valor],
-        function (err) {
-            if (err) {
-                console.error('Erro ao salvar meta:', err);
-                return res.status(500).json({ erro: 'Erro ao salvar meta' });
-            }
-            res.json({ sucesso: true, id: this.lastID });
-        }
-    );
-});
-
-// ============= SERVIDOR =============
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Servidor rodando na porta ${PORT}`);
-    console.log(`📁 SQLite: ${dbPath}`);
-});
-
-// ============= ROTAS DESPESAS =============
-app.get('/api/despesas', verificarAcesso, async (req, res) => {
-    try {
-        const despesas = await query(
-            'SELECT * FROM despesas WHERE barbearia_id =? ORDER BY data DESC',
-            [req.barbeariaId]
-        );
-        res.json(despesas);
-    } catch (error) {
-        res.status(500).json({ erro: error.message });
-    }
-});
-
-app.post('/api/despesas', verificarAcesso, async (req, res) => {
-    const { descricao, valor, categoria, data, pagamento, observacao } = req.body;
-
-    if (!descricao || !valor || !data) {
-        return res.status(400).json({ erro: 'Descrição, valor e data são obrigatórios' });
-    }
-
-    try {
-        const result = await run(
-            `INSERT INTO despesas (barbearia_id, descricao, valor, categoria, data, pagamento, observacao) 
-             VALUES (?,?,?,?,?,?,?)`,
-            [req.barbeariaId, descricao, valor, categoria || 'outros', data, pagamento || 'pago', observacao || '']
-        );
-
-        res.status(201).json({
-            id: result.lastID,
-            mensagem: 'Despesa cadastrada'
-        });
-    } catch (error) {
-        console.error('❌ Erro despesa:', error);
-        res.status(500).json({ erro: 'Erro ao salvar despesa' });
-    }
 });
 
 // Graceful shutdown
