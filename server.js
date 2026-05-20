@@ -1,119 +1,155 @@
 const express = require('express');
+const sqlite3 = require('sqlite3').verbose();
 const cors = require('cors');
-const crypto = require('crypto');
-const { Pool } = require('pg');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const JWT_SECRET = process.env.JWT_SECRET || 'troca-essa-chave-em-producao';
 
 app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
-// Conexão PostgreSQL
-const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false }
+// ============= SQLITE =============
+console.log('📁 Iniciando com SQLite');
+
+const isRailway = process.env.RAILWAY_ENVIRONMENT;
+const dbPath = isRailway ? '/data/agendapro.db' : path.join(__dirname, 'agendapro.db');
+
+console.log('📁 Banco em:', dbPath);
+
+const db = new sqlite3.Database(dbPath, (err) => {
+    if (err) {
+        console.error('❌ Erro SQLite:', err.message);
+        process.exit(1);
+    } else {
+        console.log('✅ Banco SQLite conectado!');
+    }
 });
 
-// ============= FUNÇÕES =============
+// ============= CRIAR TABELAS =============
+db.serialize(() => {
+    db.run(`CREATE TABLE IF NOT EXISTS barbearias (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        nome TEXT NOT NULL,
+        cnpj TEXT,
+        telefone TEXT,
+        email TEXT UNIQUE NOT NULL,
+        senha TEXT NOT NULL,
+        plano TEXT DEFAULT 'trial',
+        data_expiracao DATETIME,
+        status TEXT DEFAULT 'ativo',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`);
 
-async function initDatabase() {
-    try {
-        await pool.query(`
-            CREATE TABLE IF NOT EXISTS barbearias (
-                id SERIAL PRIMARY KEY,
-                nome TEXT NOT NULL,
-                cnpj TEXT,
-                telefone TEXT,
-                email TEXT UNIQUE NOT NULL,
-                senha TEXT NOT NULL,
-                plano TEXT DEFAULT 'trial',
-                data_expiracao TIMESTAMP,
-                status TEXT DEFAULT 'ativo',
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        `);
+    db.run(`CREATE TABLE IF NOT EXISTS agendamentos (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        barbearia_id INTEGER NOT NULL,
+        nome TEXT NOT NULL,
+        servico TEXT NOT NULL,
+        preco REAL NOT NULL,
+        data TEXT NOT NULL,
+        hora TEXT NOT NULL,
+        telefone TEXT,
+        status TEXT DEFAULT 'agendado',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (barbearia_id) REFERENCES barbearias(id)
+    )`);
 
-        await pool.query(`
-            CREATE TABLE IF NOT EXISTS agendamentos (
-                id SERIAL PRIMARY KEY,
-                barbearia_id INTEGER NOT NULL,
-                nome TEXT NOT NULL,
-                servico TEXT NOT NULL,
-                preco REAL NOT NULL,
-                data DATE NOT NULL,
-                hora TEXT NOT NULL,
-                telefone TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        `);
+    db.run(`CREATE TABLE IF NOT EXISTS clientes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        barbearia_id INTEGER NOT NULL,
+        nome TEXT NOT NULL,
+        email TEXT,
+        telefone TEXT,
+        data_cadastro DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (barbearia_id) REFERENCES barbearias(id)
+    )`);
 
-        await pool.query(`
-            CREATE TABLE IF NOT EXISTS clientes (
-                id SERIAL PRIMARY KEY,
-                barbearia_id INTEGER NOT NULL,
-                nome TEXT NOT NULL,
-                email TEXT,
-                telefone TEXT,
-                data_cadastro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        `);
+    db.run(`CREATE TABLE IF NOT EXISTS servicos (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        barbearia_id INTEGER NOT NULL,
+        nome TEXT NOT NULL,
+        descricao TEXT,
+        preco REAL NOT NULL,
+        duracao INTEGER DEFAULT 30,
+        FOREIGN KEY (barbearia_id) REFERENCES barbearias(id)
+    )`);
 
-        await pool.query(`
-            CREATE TABLE IF NOT EXISTS servicos (
-                id SERIAL PRIMARY KEY,
-                barbearia_id INTEGER NOT NULL,
-                nome TEXT NOT NULL,
-                descricao TEXT,
-                preco REAL NOT NULL,
-                duracao INTEGER DEFAULT 30
-            )
-        `);
+    db.run(`CREATE TABLE IF NOT EXISTS metas (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        barbearia_id INTEGER NOT NULL,
+        ano INTEGER NOT NULL,
+        mes INTEGER NOT NULL,
+        valor REAL DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(barbearia_id, ano, mes),
+        FOREIGN KEY (barbearia_id) REFERENCES barbearias(id)
+    )`);
 
-        console.log('✅ Banco de dados pronto!');
-    } catch (error) {
-        console.error('Erro:', error.message);
+    db.run(`CREATE TABLE IF NOT EXISTS despesas (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        barbearia_id INTEGER NOT NULL,
+        descricao TEXT NOT NULL,
+        valor REAL NOT NULL,
+        categoria TEXT DEFAULT 'outros',
+        data DATE NOT NULL,
+        pagamento TEXT DEFAULT 'pago',
+        observacao TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (barbearia_id) REFERENCES barbearias(id)
+    )`);
+
+    console.log('✅ Tabelas SQLite criadas/verificadas');
+});
+
+// ============= HELPERS =============
+const query = (sql, params = []) => {
+    return new Promise((resolve, reject) => {
+        db.all(sql, params, (err, rows) => {
+            if (err) reject(err);
+            else resolve(rows);
+        });
+    });
+};
+
+const run = (sql, params = []) => {
+    return new Promise((resolve, reject) => {
+        db.run(sql, params, function (err) {
+            if (err) reject(err);
+            else resolve({ lastID: this.lastID, changes: this.changes });
+        });
+    });
+};
+
+// ============= MIDDLEWARE =============
+const verificarAcesso = async (req, res, next) => {
+    const token = req.headers['authorization']?.replace('Bearer ', '');
+
+    if (!token) {
+        return res.status(401).json({ erro: 'Token não fornecido' });
     }
-}
-
-// Middleware de autenticação
-async function verificarAcesso(req, res, next) {
-    const barbeariaId = req.headers['barbearia-id'];
-    const token = req.headers['authorization'];
-
-    console.log('🔐 Verificando acesso:', { barbeariaId, token });
-
-    if (!barbeariaId || !token) {
-        console.log('❌ Falta ID ou token');
-        return res.status(401).json({ erro: 'Não autorizado - falta credenciais' });
-    }
 
     try {
-        // Verificar se a barbearia existe
-        const result = await pool.query('SELECT * FROM barbearias WHERE id = $1', [barbeariaId]);
+        const decoded = jwt.verify(token, JWT_SECRET);
+        const barbearia = await query('SELECT * FROM barbearias WHERE id =?', [decoded.id]);
 
-        if (result.rows.length === 0) {
-            console.log('❌ Barbearia não encontrada:', barbeariaId);
-            return res.status(401).json({ erro: 'Não autorizado - barbearia não encontrada' });
+        if (barbearia.length === 0) {
+            return res.status(401).json({ erro: 'Barbearia não encontrada' });
         }
 
-        const barbearia = result.rows[0];
-
-        // Verificar se o token é válido (opcional: validar token)
-        // Por enquanto, aceita qualquer token
-
-        console.log('✅ Acesso permitido para barbearia:', barbearia.id, barbearia.nome);
-        req.barbeariaId = parseInt(barbeariaId);
+        req.barbearia = barbearia[0];
+        req.barbeariaId = decoded.id;
         next();
     } catch (error) {
-        console.error('❌ Erro na autenticação:', error);
-        res.status(500).json({ erro: 'Erro interno' });
+        return res.status(401).json({ erro: 'Token inválido ou expirado' });
     }
-}
-// ============= ROTAS =============
+};
 
-// Cadastro
+// ============= ROTAS AUTH =============
 app.post('/api/cadastrar-barbearia', async (req, res) => {
     const { nome, email, senha, telefone, cnpj } = req.body;
 
@@ -122,244 +158,340 @@ app.post('/api/cadastrar-barbearia', async (req, res) => {
     }
 
     try {
-        const existe = await pool.query('SELECT id FROM barbearias WHERE email = $1', [email]);
-        if (existe.rows.length > 0) {
-            return res.status(400).json({ erro: 'Email já cadastrado!' });
+        const existe = await query('SELECT id FROM barbearias WHERE email =?', [email]);
+        if (existe.length > 0) {
+            return res.status(400).json({ erro: 'Este email já está cadastrado!' });
         }
 
+        const senhaHash = await bcrypt.hash(senha, 10);
         const dataExpiracao = new Date();
         dataExpiracao.setDate(dataExpiracao.getDate() + 14);
 
-        const result = await pool.query(
-            `INSERT INTO barbearias (nome, email, senha, telefone, cnpj, data_expiracao) 
-             VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
-            [nome, email, senha, telefone || '', cnpj || '', dataExpiracao]
+        const result = await run(
+            `INSERT INTO barbearias (nome, email, senha, telefone, cnpj, data_expiracao)
+             VALUES (?,?,?,?,?,?)`,
+            [nome, email, senhaHash, telefone || '', cnpj || '', dataExpiracao.toISOString()]
         );
 
+        await run(
+            `INSERT INTO servicos (barbearia_id, nome, preco, duracao) VALUES
+            (?, 'Corte de Cabelo', 35, 30),
+            (?, 'Barba', 25, 30),
+            (?, 'Corte + Barba', 55, 60)`,
+            [result.lastID, result.lastID, result.lastID]
+        );
+
+        const token = jwt.sign({ id: result.lastID }, JWT_SECRET, { expiresIn: '7d' });
+
         res.json({
-            id: result.rows[0].id,
-            mensagem: '✅ Cadastrado com sucesso! Trial de 14 dias.'
+            id: result.lastID,
+            token,
+            mensagem: '✅ Cadastrado com sucesso!'
         });
     } catch (error) {
-        res.status(500).json({ erro: error.message });
+        console.error('❌ Erro cadastro:', error);
+        res.status(500).json({ erro: 'Erro ao cadastrar' });
     }
 });
 
-// Login Barbearia
 app.post('/api/login-barbearia', async (req, res) => {
     const { email, senha } = req.body;
 
     try {
-        const result = await pool.query(
-            'SELECT * FROM barbearias WHERE email = $1 AND senha = $2',
-            [email, senha]
-        );
+        const result = await query('SELECT * FROM barbearias WHERE email =?', [email]);
 
-        if (result.rows.length === 0) {
+        if (result.length === 0) {
             return res.status(401).json({ erro: 'Email ou senha inválidos!' });
         }
 
-        const barbearia = result.rows[0];
-        const token = crypto.randomBytes(32).toString('hex');
+        const barbearia = result[0];
+        const senhaValida = await bcrypt.compare(senha, barbearia.senha);
 
-        // Inserir serviços padrão se não existirem
-        const servicos = await pool.query('SELECT * FROM servicos WHERE barbearia_id = $1', [barbearia.id]);
-        if (servicos.rows.length === 0) {
-            await pool.query(
-                `INSERT INTO servicos (barbearia_id, nome, preco, duracao) VALUES 
-                ($1, 'Corte de Cabelo', 35, 30),
-                ($1, 'Barba', 25, 30),
-                ($1, 'Corte + Barba', 55, 60)`,
-                [barbearia.id]
-            );
+        if (!senhaValida) {
+            return res.status(401).json({ erro: 'Email ou senha inválidos!' });
         }
+
+        const token = jwt.sign({ id: barbearia.id }, JWT_SECRET, { expiresIn: '7d' });
 
         res.json({
             id: barbearia.id,
             nome: barbearia.nome,
             email: barbearia.email,
-            token: token,
-            dias_restantes: 14
+            token
         });
     } catch (error) {
-        res.status(500).json({ erro: error.message });
+        console.error('❌ Erro login:', error);
+        res.status(500).json({ erro: 'Erro ao fazer login' });
     }
 });
 
-// Login Admin
-app.post('/api/login-admin', (req, res) => {
-    const { username, senha } = req.body;
-    if (username === 'superadmin' && senha === 'admin123') {
-        res.json({ token: 'admin-token' });
-    } else {
-        res.status(401).json({ erro: 'Acesso negado!' });
-    }
-});
-
-// Dashboard
+// ============= ROTAS DASHBOARD =============
 app.get('/api/dashboard', verificarAcesso, async (req, res) => {
     try {
-        const result = await pool.query(
-            'SELECT * FROM agendamentos WHERE barbearia_id = $1 ORDER BY data, hora',
-            [req.barbeariaId]
-        );
+        const mesAtual = new Date().toISOString().slice(0, 7);
 
-        const hoje = new Date();
-        const semana = [];
-        for (let i = 0; i < 7; i++) {
-            const data = new Date();
-            data.setDate(hoje.getDate() + i);
-            semana.push(data.toISOString().split('T')[0]);
-        }
-
-        const agendamentosPorDia = {};
-        semana.forEach(dia => {
-            agendamentosPorDia[dia] = result.rows.filter(a => a.data === dia);
-        });
-
-        const hojeStr = hoje.toISOString().split('T')[0];
-        const faturamentoHoje = agendamentosPorDia[hojeStr]?.reduce((sum, a) => sum + a.preco, 0) || 0;
-        const faturamentoSemana = result.rows.reduce((sum, a) => sum + a.preco, 0);
+        const [faturamento, agendamentos, clientes, meta] = await Promise.all([
+            query(`SELECT SUM(preco) as total FROM agendamentos
+                   WHERE barbearia_id =? AND data LIKE? AND status!= 'cancelado'`,
+                [req.barbeariaId, `${mesAtual}%`]),
+            query(`SELECT COUNT(*) as total FROM agendamentos
+                   WHERE barbearia_id =? AND data LIKE?`,
+                [req.barbeariaId, `${mesAtual}%`]),
+            query(`SELECT COUNT(*) as total FROM clientes WHERE barbearia_id =?`, [req.barbeariaId]),
+            query(`SELECT valor FROM metas WHERE barbearia_id =? AND ano =? AND mes =?`,
+                [req.barbeariaId, new Date().getFullYear(), new Date().getMonth() + 1])
+        ]);
 
         res.json({
-            semana: semana,
-            agendamentos: agendamentosPorDia,
-            faturamento: { dia: faturamentoHoje, semana: faturamentoSemana },
-            totalAgendamentos: result.rows.length
+            faturamento: faturamento[0].total || 0,
+            agendamentos: agendamentos[0].total || 0,
+            clientes: clientes[0].total || 0,
+            meta: meta[0]?.valor || 0
         });
     } catch (error) {
-        res.status(500).json({ erro: error.message });
+        console.error('❌ Erro dashboard:', error);
+        res.status(500).json({ erro: 'Erro ao carregar dashboard' });
     }
 });
 
-// Listar agendamentos
-app.get('/api/agendamentos', verificarAcesso, async (req, res) => {
-    console.log('📋 Buscando agendamentos para barbearia:', req.barbeariaId);
-
+// ============= ROTAS SERVIÇOS =============
+app.get('/api/servicos', verificarAcesso, async (req, res) => {
     try {
-        const result = await pool.query(
-            'SELECT * FROM agendamentos WHERE barbearia_id = $1 ORDER BY data, hora',
+        const servicos = await query(
+            'SELECT * FROM servicos WHERE barbearia_id =? ORDER BY id DESC',
             [req.barbeariaId]
         );
-
-        console.log(`✅ Encontrados ${result.rows.length} agendamentos`);
-        res.json(result.rows);
+        res.json(servicos);
     } catch (error) {
-        console.error('❌ Erro ao buscar:', error);
         res.status(500).json({ erro: error.message });
     }
 });
 
-// Criar agendamento
+app.post('/api/servicos', verificarAcesso, async (req, res) => {
+    const { nome, preco, duracao, descricao } = req.body;
+
+    if (!nome || !preco) {
+        return res.status(400).json({ erro: 'Nome e preço são obrigatórios' });
+    }
+
+    try {
+        const result = await run(
+            'INSERT INTO servicos (barbearia_id, nome, preco, duracao, descricao) VALUES (?,?,?,?,?)',
+            [req.barbeariaId, nome, preco, duracao || 30, descricao || '']
+        );
+        res.json({ id: result.lastID, mensagem: 'Serviço criado' });
+    } catch (error) {
+        res.status(500).json({ erro: error.message });
+    }
+});
+
+// ============= ROTAS AGENDAMENTOS =============
+app.get('/api/agendamentos', verificarAcesso, async (req, res) => {
+    try {
+        const agendamentos = await query(
+            `SELECT * FROM agendamentos WHERE barbearia_id =?
+             ORDER BY data DESC, hora DESC LIMIT 100`,
+            [req.barbeariaId]
+        );
+        res.json(agendamentos);
+    } catch (error) {
+        res.status(500).json({ erro: error.message });
+    }
+});
+
 app.post('/api/agendamentos', verificarAcesso, async (req, res) => {
     const { nome, servico, preco, data, hora, telefone } = req.body;
 
+    if (!nome || !servico || !preco || !data || !hora) {
+        return res.status(400).json({ erro: 'Dados incompletos' });
+    }
+
     try {
-        const result = await pool.query(
+        const result = await run(
             `INSERT INTO agendamentos (barbearia_id, nome, servico, preco, data, hora, telefone)
-             VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
+             VALUES (?,?,?,?,?,?,?)`,
             [req.barbeariaId, nome, servico, preco, data, hora, telefone || '']
         );
-
-        res.json({ mensagem: '✅ Agendado com sucesso!', id: result.rows[0].id });
+        res.json({ id: result.lastID, mensagem: 'Agendamento criado' });
     } catch (error) {
         res.status(500).json({ erro: error.message });
     }
 });
 
-// Deletar agendamento
-app.delete('/api/agendamentos/:id', verificarAcesso, async (req, res) => {
+// ============= ROTAS CLIENTES =============
+app.get('/api/clientes', verificarAcesso, async (req, res) => {
     try {
-        await pool.query(
-            'DELETE FROM agendamentos WHERE id = $1 AND barbearia_id = $2',
-            [req.params.id, req.barbeariaId]
+        const clientes = await query(
+            'SELECT * FROM clientes WHERE barbearia_id =? ORDER BY nome',
+            [req.barbeariaId]
         );
-        res.json({ mensagem: '✅ Cancelado!' });
+        res.json(clientes);
     } catch (error) {
         res.status(500).json({ erro: error.message });
     }
 });
 
-// Listar serviços
-app.get('/api/servicos', verificarAcesso, async (req, res) => {
-    const result = await pool.query('SELECT * FROM servicos WHERE barbearia_id = $1 ORDER BY nome', [req.barbeariaId]);
-    res.json(result.rows);
+// ============= HEALTH CHECK =============
+app.get('/', (req, res) => {
+    res.send('🚀 AgendaPro online!');
 });
 
-// Criar serviço
-app.post('/api/servicos', verificarAcesso, async (req, res) => {
-    const { nome, descricao, preco, duracao } = req.body;
-    const result = await pool.query(
-        `INSERT INTO servicos (barbearia_id, nome, descricao, preco, duracao) VALUES ($1, $2, $3, $4, $5) RETURNING id`,
-        [req.barbeariaId, nome, descricao || '', preco, duracao || 30]
-    );
-    res.json({ id: result.rows[0].id, mensagem: '✅ Serviço criado!' });
+app.get('/api/health', (req, res) => {
+    res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Atualizar serviço
-app.put('/api/servicos/:id', verificarAcesso, async (req, res) => {
-    const { nome, descricao, preco, duracao } = req.body;
-    await pool.query(
-        `UPDATE servicos SET nome = $1, descricao = $2, preco = $3, duracao = $4 WHERE id = $5 AND barbearia_id = $6`,
-        [nome, descricao || '', preco, duracao || 30, req.params.id, req.barbeariaId]
-    );
-    res.json({ mensagem: '✅ Serviço atualizado!' });
+// ============= ERROR HANDLER =============
+app.use((err, req, res, next) => {
+    console.error('❌ Erro:', err);
+    res.status(500).json({ erro: 'Erro interno do servidor' });
 });
 
-// Excluir serviço
-app.delete('/api/servicos/:id', verificarAcesso, async (req, res) => {
-    await pool.query('DELETE FROM servicos WHERE id = $1 AND barbearia_id = $2', [req.params.id, req.barbeariaId]);
-    res.json({ mensagem: '✅ Serviço excluído!' });
+// ============= SERVIDOR =============
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Servidor rodando na porta ${PORT}`);
+    console.log(`📁 SQLite: ${dbPath}`);
 });
 
-// Faturamento do mês
-app.get('/api/faturamento/mes', verificarAcesso, async (req, res) => {
-    try {
-        const hoje = new Date();
-        const ano = hoje.getFullYear();
-        const mes = hoje.getMonth() + 1;
-        const primeiroDia = `${ano}-${mes.toString().padStart(2, '0')}-01`;
-        const ultimoDia = new Date(ano, mes, 0).toISOString().split('T')[0];
+// ============= ROTAS ADMIN =============
 
-        const result = await pool.query(
-            `SELECT COALESCE(SUM(preco), 0) as total FROM agendamentos 
-             WHERE barbearia_id = $1 AND data >= $2 AND data <= $3`,
-            [req.barbeariaId, primeiroDia, ultimoDia]
-        );
+// Login do Super Admin - senha fixa por enquanto
+app.post('/api/login-admin', async (req, res) => {
+    const { username, senha } = req.body;
 
-        res.json({ faturamento: parseFloat(result.rows[0]?.total) || 0 });
-    } catch (error) {
-        res.status(500).json({ erro: error.message });
+    // Troca pra algo mais seguro depois
+    if (username === 'superadmin' && senha === 'admin123') {
+        const token = jwt.sign({ admin: true, user: 'superadmin' }, JWT_SECRET, { expiresIn: '8h' });
+        res.json({ token, mensagem: 'Login admin ok' });
+    } else {
+        res.status(401).json({ erro: 'Acesso negado' });
     }
 });
 
-// Admin
-app.get('/api/admin/barbearias', async (req, res) => {
-    const auth = req.headers['authorization'];
-    if (auth !== 'admin-token') {
-        return res.status(401).json({ erro: 'Não autorizado' });
-    }
+// Middleware só pra admin
+// Middleware só pra admin - VERSÃO CORRIGIDA
+const verificarAdmin = (req, res, next) => {
+    const authHeader = req.headers['authorization'];
+    if (!authHeader) return res.status(401).json({ erro: 'Token não fornecido' });
+
+    // Tira o "Bearer " da frente
+    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : authHeader;
 
     try {
-        const result = await pool.query('SELECT id, nome, email, status FROM barbearias ORDER BY id');
-        res.json(result.rows);
+        const decoded = jwt.verify(token, JWT_SECRET);
+        if (!decoded.admin) throw new Error('Não é admin');
+        req.admin = decoded;
+        next();
+    } catch (error) {
+        return res.status(401).json({ erro: 'Token admin inválido' });
+    }
+};
+
+// Listar todas barbearias
+app.get('/api/admin/barbearias', verificarAdmin, async (req, res) => {
+    try {
+        const barbearias = await query('SELECT id, nome, email, telefone, cnpj, plano, data_expiracao, status FROM barbearias ORDER BY id DESC');
+        res.json(barbearias);
     } catch (error) {
         res.status(500).json({ erro: error.message });
     }
 });
 
-// Planos
-app.get('/api/planos', (req, res) => {
-    res.json([
-        { id: 'mensal', nome: 'Plano Mensal', preco: 49.90, descricao: 'Ideal para barbearias em crescimento' },
-        { id: 'trimestral', nome: 'Plano Trimestral', preco: 129.90, descricao: 'Economize 15%' },
-        { id: 'anual', nome: 'Plano Anual', preco: 499.90, descricao: 'Economize 30%' }
-    ]);
+// Buscar 1 barbearia
+app.get('/api/admin/barbearias/:id', verificarAdmin, async (req, res) => {
+    try {
+        const result = await query('SELECT * FROM barbearias WHERE id =?', [req.params.id]);
+        if (result.length === 0) return res.status(404).json({ erro: 'Não encontrada' });
+        delete result[0].senha; // não manda senha
+        res.json(result[0]);
+    } catch (error) {
+        res.status(500).json({ erro: error.message });
+    }
 });
 
-// Iniciar servidor
-initDatabase().then(() => {
-    app.listen(PORT, () => {
-        console.log(`🚀 Servidor rodando na porta ${PORT}`);
+// Editar barbearia
+app.put('/api/admin/barbearias/:id', verificarAdmin, async (req, res) => {
+    const { nome, email, telefone, cnpj, senha, plano } = req.body;
+    const { id } = req.params;
+
+    try {
+        let sql = 'UPDATE barbearias SET nome =?, email =?, telefone =?, cnpj =?, plano =?';
+        let params = [nome, email, telefone, cnpj, plano];
+
+        // Só atualiza senha se foi enviada
+        if (senha && senha.trim() !== '') {
+            const senhaHash = await bcrypt.hash(senha, 10);
+            sql += ', senha =?';
+            params.push(senhaHash);
+        }
+
+        sql += ' WHERE id =?';
+        params.push(id);
+
+        await run(sql, params);
+        res.json({ mensagem: 'Barbearia atualizada' });
+    } catch (error) {
+        res.status(500).json({ erro: error.message });
+    }
+});
+
+// Alterar status + adicionar dias
+app.put('/api/admin/barbearias/:id/status', verificarAdmin, async (req, res) => {
+    const { status, dias_extras } = req.body;
+    const { id } = req.params;
+
+    try {
+        if (dias_extras) {
+            // Pega data atual de expiração e soma dias
+            const atual = await query('SELECT data_expiracao FROM barbearias WHERE id =?', [id]);
+            let novaData = new Date(atual[0].data_expiracao || new Date());
+            novaData.setDate(novaData.getDate() + parseInt(dias_extras));
+
+            await run(
+                'UPDATE barbearias SET status =?, data_expiracao =? WHERE id =?',
+                [status, novaData.toISOString(), id]
+            );
+        } else {
+            await run('UPDATE barbearias SET status =? WHERE id =?', [status, id]);
+        }
+
+        res.json({ mensagem: 'Status atualizado' });
+    } catch (error) {
+        res.status(500).json({ erro: error.message });
+    }
+});
+
+// Excluir barbearia
+app.delete('/api/admin/barbearias/:id', verificarAdmin, async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        // Apaga tudo relacionado
+        await run('DELETE FROM agendamentos WHERE barbearia_id =?', [id]);
+        await run('DELETE FROM clientes WHERE barbearia_id =?', [id]);
+        await run('DELETE FROM servicos WHERE barbearia_id =?', [id]);
+        await run('DELETE FROM metas WHERE barbearia_id =?', [id]);
+        await run('DELETE FROM despesas WHERE barbearia_id =?', [id]);
+        await run('DELETE FROM barbearias WHERE id =?', [id]);
+
+        res.json({ mensagem: 'Barbearia excluída com sucesso' });
+    } catch (error) {
+        res.status(500).json({ erro: error.message });
+    }
+});
+
+// Rota nova no server.js
+app.post('/api/admin/barbearias/:id/reset-senha', verificarAdmin, async (req, res) => {
+    const novaSenha = Math.random().toString(36).slice(-8); // gera: "k3j9h2x1"
+    const senhaHash = await bcrypt.hash(novaSenha, 10);
+
+    await run('UPDATE barbearias SET senha =? WHERE id =?', [senhaHash, req.params.id]);
+    res.json({ mensagem: 'Senha resetada', novaSenha });
+});
+
+// Graceful shutdown
+process.on('SIGINT', () => {
+    db.close(() => {
+        console.log('🔒 Banco fechado');
+        process.exit(0);
     });
 });

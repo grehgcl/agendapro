@@ -3,8 +3,8 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>Admin - Gerenciar Barbearias</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - AgendaPro</title>
     <style>
         * {
             margin: 0;
@@ -33,20 +33,6 @@
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
-            gap: 15px;
-        }
-
-        .header h1 {
-            font-size: 1.5em;
-        }
-
-        .logout {
-            background: rgba(255, 255, 255, 0.2);
-            border: none;
-            padding: 8px 20px;
-            border-radius: 20px;
-            color: white;
-            cursor: pointer;
         }
 
         .stats {
@@ -76,7 +62,7 @@
 
         .search-bar input {
             width: 100%;
-            padding: 14px;
+            padding: 12px;
             border: 2px solid #e0e0e0;
             border-radius: 12px;
             font-size: 16px;
@@ -96,7 +82,7 @@
 
         th,
         td {
-            padding: 15px;
+            padding: 12px;
             text-align: left;
             border-bottom: 1px solid #eee;
         }
@@ -104,8 +90,6 @@
         th {
             background: #f8f9fa;
             font-weight: 600;
-            position: sticky;
-            top: 0;
         }
 
         .status-ativo {
@@ -118,19 +102,13 @@
             font-weight: bold;
         }
 
-        .status-trial {
-            color: #ffc107;
-            font-weight: bold;
-        }
-
         .btn {
             padding: 6px 12px;
             border: none;
             border-radius: 8px;
             cursor: pointer;
             margin: 2px;
-            font-size: 0.85em;
-            transition: all 0.2s;
+            font-size: 0.8em;
         }
 
         .btn-ativar {
@@ -158,12 +136,6 @@
             color: white;
         }
 
-        .btn:hover {
-            opacity: 0.8;
-            transform: scale(0.98);
-        }
-
-        /* Modal */
         .modal {
             display: none;
             position: fixed;
@@ -175,7 +147,6 @@
             justify-content: center;
             align-items: center;
             z-index: 1000;
-            padding: 16px;
         }
 
         .modal.show {
@@ -184,23 +155,10 @@
 
         .modal-content {
             background: white;
-            border-radius: 24px;
+            border-radius: 20px;
             max-width: 500px;
-            width: 100%;
+            width: 90%;
             overflow: hidden;
-            animation: modalIn 0.3s ease;
-        }
-
-        @keyframes modalIn {
-            from {
-                opacity: 0;
-                transform: translateY(-30px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
         }
 
         .modal-header {
@@ -210,39 +168,31 @@
         }
 
         .modal-body {
-            padding: 24px;
+            padding: 20px;
         }
 
         .form-group {
-            margin-bottom: 16px;
+            margin-bottom: 15px;
         }
 
         .form-group label {
             display: block;
-            margin-bottom: 8px;
+            margin-bottom: 5px;
             font-weight: 600;
-            color: #333;
         }
 
         .form-group input,
         .form-group select {
             width: 100%;
-            padding: 12px;
+            padding: 10px;
             border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            font-size: 14px;
-        }
-
-        .form-group input:focus,
-        .form-group select:focus {
-            outline: none;
-            border-color: #dc3545;
+            border-radius: 8px;
         }
 
         .modal-footer {
             display: flex;
-            gap: 12px;
-            padding: 20px 24px;
+            gap: 10px;
+            padding: 20px;
             border-top: 1px solid #eee;
         }
 
@@ -251,9 +201,8 @@
             background: #28a745;
             color: white;
             border: none;
-            padding: 12px;
-            border-radius: 10px;
-            font-weight: 600;
+            padding: 10px;
+            border-radius: 8px;
             cursor: pointer;
         }
 
@@ -262,9 +211,35 @@
             background: #6c757d;
             color: white;
             border: none;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .login-area {
+            max-width: 400px;
+            margin: 100px auto;
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+        }
+
+        .login-area input {
+            width: 100%;
             padding: 12px;
-            border-radius: 10px;
-            font-weight: 600;
+            margin: 10px 0;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+        }
+
+        .login-area button {
+            width: 100%;
+            padding: 12px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 8px;
             cursor: pointer;
         }
 
@@ -277,72 +252,38 @@
             color: white;
             padding: 12px 24px;
             border-radius: 40px;
-            font-size: 0.9em;
             z-index: 1100;
-            animation: slideUp 0.3s ease;
         }
 
         .toast.erro {
             background: #dc3545;
         }
 
-        @keyframes slideUp {
-            from {
-                transform: translateX(-50%) translateY(100%);
-                opacity: 0;
-            }
-
-            to {
-                transform: translateX(-50%) translateY(0);
-                opacity: 1;
-            }
-        }
-
-        .login-area {
-            max-width: 400px;
-            margin: 100px auto;
-            background: white;
-            padding: 30px;
-            border-radius: 24px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-        }
-
-        .login-area h2 {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        .login-area input {
-            width: 100%;
-            padding: 12px;
-            margin: 10px 0;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
-        }
-
-        .login-area button {
-            width: 100%;
-            padding: 12px;
-            background: #dc3545;
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
         @media (max-width: 768px) {
 
             th,
             td {
-                padding: 10px;
-                font-size: 0.85em;
+                font-size: 0.8em;
+                padding: 8px;
             }
 
             .btn {
                 padding: 4px 8px;
-                font-size: 0.75em;
+                font-size: 0.7em;
             }
+
+
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #333;
+            padding: 5px 10px;
+            font-size: 0.85rem;
+        }
+
+        .btn-warning:hover {
+            background: #e0a800;
         }
     </style>
 </head>
@@ -359,30 +300,13 @@
         <div class="container">
             <div class="header">
                 <h1>👑 Painel de Controle - Barbearias</h1>
-                <button class="logout" onclick="logout()">Sair</button>
+                <button class="btn-excluir" onclick="logout()" style="background: rgba(255,255,255,0.2);">Sair</button>
             </div>
 
-            <div class="stats" id="stats">
-                <div class="stat-card">
-                    <div class="stat-number" id="totalBarbearias">0</div>
-                    <div>Total Barbearias</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number" id="ativasCount">0</div>
-                    <div>Ativas</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number" id="inativasCount">0</div>
-                    <div>Inativas</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number" id="trialCount">0</div>
-                    <div>Em Trial</div>
-                </div>
-            </div>
+            <div class="stats" id="stats"></div>
 
             <div class="search-bar">
-                <input type="text" id="searchInput" placeholder="🔍 Buscar barbearia por nome, email ou ID...">
+                <input type="text" id="searchInput" placeholder="🔍 Buscar barbearia...">
             </div>
 
             <div class="table-container">
@@ -392,7 +316,6 @@
                             <th>ID</th>
                             <th>Nome</th>
                             <th>Email</th>
-                            <th>Telefone</th>
                             <th>Plano</th>
                             <th>Expira em</th>
                             <th>Status</th>
@@ -405,54 +328,37 @@
         </div>
     </div>
 
-    <!-- Modal de Edição de Barbearia -->
+    <!-- Modal Editar -->
     <div id="editModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
                 <h3>✏️ Editar Barbearia</h3>
             </div>
             <div class="modal-body">
-                <div class="form-group">
-                    <label>Nome da Barbearia</label>
-                    <input type="text" id="editNome" required>
-                </div>
-                <div class="form-group">
-                    <label>E-mail</label>
-                    <input type="email" id="editEmail" required>
-                </div>
-                <div class="form-group">
-                    <label>Telefone</label>
-                    <input type="text" id="editTelefone">
-                </div>
-                <div class="form-group">
-                    <label>CNPJ</label>
-                    <input type="text" id="editCnpj">
-                </div>
-                <div class="form-group">
-                    <label>Nova Senha (deixe em branco para manter)</label>
-                    <input type="password" id="editSenha" placeholder="Digite nova senha">
-                </div>
-                <div class="form-group">
-                    <label>Plano</label>
+                <div class="form-group"><label>Nome</label><input type="text" id="editNome"></div>
+                <div class="form-group"><label>Email</label><input type="email" id="editEmail"></div>
+                <div class="form-group"><label>Telefone</label><input type="text" id="editTelefone"></div>
+                <div class="form-group"><label>CNPJ</label><input type="text" id="editCnpj"></div>
+                <div class="form-group"><label>Nova Senha</label><input type="password" id="editSenha"
+                        placeholder="Deixe em branco para manter"></div>
+                <div class="form-group"><label>Plano</label>
                     <select id="editPlano">
-                        <option value="trial">🎁 Trial (14 dias)</option>
-                        <option value="mensal">💰 Plano Mensal</option>
-                        <option value="trimestral">💰 Plano Trimestral</option>
-                        <option value="anual">💰 Plano Anual</option>
+                        <option value="trial">Trial</option>
+                        <option value="mensal">Mensal</option>
+                        <option value="trimestral">Trimestral</option>
+                        <option value="anual">Anual</option>
                     </select>
                 </div>
             </div>
             <div class="modal-footer">
                 <button class="btn-cancelar" onclick="fecharModal()">Cancelar</button>
-                <button class="btn-salvar" onclick="salvarEdicao()">Salvar Alterações</button>
+                <button class="btn-salvar" onclick="salvarEdicao()">Salvar</button>
             </div>
         </div>
     </div>
 
     <script>
-        const API_URL = window.location.hostname === 'localhost'
-            ? 'http://localhost:3000/api'
-            : '/api';
+        const API_URL = window.location.origin;
         let adminToken = null;
         let barbearias = [];
         let barbeariaEditando = null;
@@ -462,91 +368,65 @@
             const senha = document.getElementById('adminPass').value;
 
             try {
-                const response = await fetch(`${API_URL}/login-admin`, {
+                const response = await fetch(`${API_URL}/api/login-admin`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username, senha })
                 });
 
-                const resultado = await response.json();
-
+                const result = await response.json();
                 if (response.ok) {
-                    adminToken = resultado.token;
+                    adminToken = result.token;
                     document.getElementById('loginArea').style.display = 'none';
                     document.getElementById('adminPanel').style.display = 'block';
                     carregarBarbearias();
                 } else {
-                    alert('Acesso negado! Usuário ou senha incorretos.');
+                    alert('Acesso negado!');
                 }
             } catch (error) {
-                alert('Erro ao conectar com o servidor');
+                alert('Erro ao conectar');
             }
         }
 
         async function carregarBarbearias() {
             try {
-                const response = await fetch(`${API_URL}/admin/barbearias`, {
-                    headers: { 'Authorization': adminToken }
+                const response = await fetch(`${API_URL}/api/admin/barbearias`, {
+                    headers: { 'Authorization': `Bearer ${adminToken}` }
                 });
-
                 barbearias = await response.json();
                 exibirBarbearias(barbearias);
                 atualizarStats();
             } catch (error) {
-                console.error('Erro ao carregar:', error);
+                console.error('Erro:', error);
             }
         }
 
         function exibirBarbearias(lista) {
             const tbody = document.getElementById('tabelaBarbearias');
-
-            if (lista.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">Nenhuma barbearia cadastrada</td></tr>';
-                return;
-            }
-
             tbody.innerHTML = lista.map(b => {
-                let statusClass = '';
-                let statusText = '';
-
-                if (b.status === 'ativo') {
-                    statusClass = 'status-ativo';
-                    statusText = '🟢 Ativo';
-                } else {
-                    statusClass = 'status-inativo';
-                    statusText = '🔴 Inativo';
-                }
-
                 const expiracao = new Date(b.data_expiracao);
-                const hoje = new Date();
-                const diasRestantes = Math.ceil((expiracao - hoje) / (1000 * 60 * 60 * 24));
+                const statusClass = b.status === 'ativo' ? 'status-ativo' : 'status-inativo';
+                const statusText = b.status === 'ativo' ? '🟢 Ativo' : '🔴 Inativo';
+                const planoText = b.plano === 'trial' ? '🎁 Trial' : `💰 ${b.plano}`;
 
-                let planoText = '';
-                if (b.plano === 'trial') planoText = '🎁 Trial';
-                else if (b.plano === 'mensal') planoText = '💰 Mensal';
-                else if (b.plano === 'trimestral') planoText = '💰 Trimestral';
-                else planoText = '💰 Anual';
-
-                return `
-                    <tr>
-                        <td>${b.id}</td>
-                        <td><strong>${escapeHtml(b.nome)}</strong></td>
-                        <td>${escapeHtml(b.email)}</td>
-                        <td>${escapeHtml(b.telefone) || '-'}</td>
-                        <td>${planoText}</td>
-                        <td>${expiracao.toLocaleDateString()} <br> <small>(${diasRestantes} dias)</small></td>
-                        <td class="${statusClass}">${statusText}</td>
-                        <td>
-                            <button class="btn btn-editar" onclick="abrirModalEditar(${b.id})" title="Editar">✏️ Editar</button>
-                            <button class="btn btn-excluir" onclick="excluirBarbearia(${b.id}, '${escapeHtml(b.nome)}')" title="Excluir">🗑️ Excluir</button>
-                            ${b.status === 'ativo' ?
-                        `<button class="btn btn-desativar" onclick="alterarStatus(${b.id}, 'inativo')" title="Desativar">🔴 Desativar</button>` :
-                        `<button class="btn btn-ativar" onclick="alterarStatus(${b.id}, 'ativo')" title="Ativar">🟢 Ativar</button>`
+                return `<tr>
+            <td>${b.id}</td>
+            <td><strong>${b.nome || '-'}</strong></td>
+            <td>${b.email || '-'}</td>
+            <td>${planoText}</td>
+            <td>${expiracao.toLocaleDateString()}</td>
+            <td class="${statusClass}">${statusText}</td>
+            <td>
+                <button class="btn btn-editar" onclick="abrirModalEditar(${b.id})">✏️</button>
+                <button class="btn btn-warning" onclick="resetarSenha(${b.id}, '${b.nome}')">🔑</button>
+                <button class="btn btn-excluir" onclick="excluirBarbearia(${b.id})">🗑️</button>
+                ${b.status === 'ativo' ?
+                        `<button class="btn btn-desativar" onclick="alterarStatus(${b.id}, 'inativo')">🔴 Desativar</button>` :
+                        `<button class="btn btn-ativar" onclick="alterarStatus(${b.id}, 'ativo')">🟢 Ativar</button>`
                     }
-                            <button class="btn btn-dias" onclick="adicionarDias(${b.id})" title="Adicionar dias">📅 +7 dias</button>
-                        </td>
-                    </tr>
-                `;
+                <button class="btn btn-dias" onclick="adicionarDias(${b.id})">📅 +7d</button>
+            </td>
+        </tr>`;
             }).join('');
         }
 
@@ -554,35 +434,32 @@
             const total = barbearias.length;
             const ativas = barbearias.filter(b => b.status === 'ativo').length;
             const inativas = barbearias.filter(b => b.status === 'inativo').length;
-            const trial = barbearias.filter(b => b.plano === 'trial').length;
-
-            document.getElementById('totalBarbearias').textContent = total;
-            document.getElementById('ativasCount').textContent = ativas;
-            document.getElementById('inativasCount').textContent = inativas;
-            document.getElementById('trialCount').textContent = trial;
+            document.getElementById('stats').innerHTML = `
+                <div class="stat-card"><div class="stat-number">${total}</div><div>Total</div></div>
+                <div class="stat-card"><div class="stat-number">${ativas}</div><div>Ativas</div></div>
+                <div class="stat-card"><div class="stat-number">${inativas}</div><div>Inativas</div></div>
+            `;
         }
 
-        // Busca em tempo real
+        // Busca
         document.getElementById('searchInput').addEventListener('input', (e) => {
             const termo = e.target.value.toLowerCase();
             const filtrados = barbearias.filter(b =>
-                b.nome.toLowerCase().includes(termo) ||
-                b.email.toLowerCase().includes(termo) ||
-                b.id.toString().includes(termo)
+                b.nome?.toLowerCase().includes(termo) ||
+                b.email?.toLowerCase().includes(termo)
             );
             exibirBarbearias(filtrados);
         });
 
-        // Abrir modal para editar barbearia
         async function abrirModalEditar(id) {
             try {
-                const response = await fetch(`${API_URL}/admin/barbearias/${id}`, {
-                    headers: { 'Authorization': adminToken }
+                const response = await fetch(`${API_URL}/api/admin/barbearias/${id}`, {
+                    headers: { 'Authorization': `Bearer ${adminToken}` }
                 });
                 barbeariaEditando = await response.json();
 
-                document.getElementById('editNome').value = barbeariaEditando.nome;
-                document.getElementById('editEmail').value = barbeariaEditando.email;
+                document.getElementById('editNome').value = barbeariaEditando.nome || '';
+                document.getElementById('editEmail').value = barbeariaEditando.email || '';
                 document.getElementById('editTelefone').value = barbeariaEditando.telefone || '';
                 document.getElementById('editCnpj').value = barbeariaEditando.cnpj || '';
                 document.getElementById('editSenha').value = '';
@@ -590,11 +467,10 @@
 
                 document.getElementById('editModal').classList.add('show');
             } catch (error) {
-                mostrarToast('Erro ao carregar dados da barbearia', true);
+                mostrarToast('Erro ao carregar dados', true);
             }
         }
 
-        // Salvar edição
         async function salvarEdicao() {
             const dados = {
                 nome: document.getElementById('editNome').value,
@@ -605,13 +481,8 @@
                 plano: document.getElementById('editPlano').value
             };
 
-            if (!dados.nome || !dados.email) {
-                mostrarToast('Nome e email são obrigatórios!', true);
-                return;
-            }
-
             try {
-                const response = await fetch(`${API_URL}/admin/barbearias/${barbeariaEditando.id}`, {
+                const response = await fetch(`${API_URL}/api/admin/barbearias/${barbeariaEditando.id}`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
@@ -620,36 +491,32 @@
                     body: JSON.stringify(dados)
                 });
 
-                const resultado = await response.json();
-
+                const result = await response.json();
                 if (response.ok) {
-                    mostrarToast(resultado.mensagem);
+                    mostrarToast(result.mensagem);
                     fecharModal();
                     carregarBarbearias();
                 } else {
-                    mostrarToast(resultado.erro, true);
+                    mostrarToast(result.erro, true);
                 }
             } catch (error) {
                 mostrarToast('Erro ao salvar', true);
             }
         }
 
-        // Excluir barbearia
-        async function excluirBarbearia(id, nome) {
-            if (confirm(`Tem certeza que deseja EXCLUIR PERMANENTEMENTE a barbearia "${nome}"?\n\nTODOS os dados serão perdidos! Essa ação não pode ser desfeita.`)) {
+        async function excluirBarbearia(id) {
+            if (confirm('Tem certeza que deseja excluir esta barbearia? Todas os dados serão perdidos!')) {
                 try {
-                    const response = await fetch(`${API_URL}/admin/barbearias/${id}`, {
+                    const response = await fetch(`${API_URL}/api/admin/barbearias/${id}`, {
                         method: 'DELETE',
-                        headers: { 'Authorization': adminToken }
+                        headers: { 'Authorization': `Bearer ${adminToken}` }
                     });
-
-                    const resultado = await response.json();
-
+                    const result = await response.json();
                     if (response.ok) {
-                        mostrarToast(resultado.mensagem);
+                        mostrarToast(result.mensagem);
                         carregarBarbearias();
                     } else {
-                        mostrarToast(resultado.erro, true);
+                        mostrarToast(result.erro, true);
                     }
                 } catch (error) {
                     mostrarToast('Erro ao excluir', true);
@@ -657,10 +524,9 @@
             }
         }
 
-        // Alterar status (ativar/desativar)
         async function alterarStatus(id, status) {
             try {
-                const response = await fetch(`${API_URL}/admin/barbearias/${id}/status`, {
+                const response = await fetch(`${API_URL}/api/admin/barbearias/${id}/status`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
@@ -668,26 +534,23 @@
                     },
                     body: JSON.stringify({ status })
                 });
-
-                const resultado = await response.json();
-
+                const result = await response.json();
                 if (response.ok) {
-                    mostrarToast(resultado.mensagem);
+                    mostrarToast(result.mensagem);
                     carregarBarbearias();
                 } else {
-                    mostrarToast(resultado.erro, true);
+                    mostrarToast(result.erro, true);
                 }
             } catch (error) {
                 mostrarToast('Erro ao alterar status', true);
             }
         }
 
-        // Adicionar dias extras
         async function adicionarDias(id) {
             const dias = prompt('Quantos dias adicionar?', '7');
             if (dias && !isNaN(dias) && parseInt(dias) > 0) {
                 try {
-                    const response = await fetch(`${API_URL}/admin/barbearias/${id}/status`, {
+                    const response = await fetch(`${API_URL}/api/admin/barbearias/${id}/status`, {
                         method: 'PUT',
                         headers: {
                             'Content-Type': 'application/json',
@@ -695,14 +558,12 @@
                         },
                         body: JSON.stringify({ status: 'ativo', dias_extras: parseInt(dias) })
                     });
-
-                    const resultado = await response.json();
-
+                    const result = await response.json();
                     if (response.ok) {
-                        mostrarToast(`${dias} dias adicionados com sucesso!`);
+                        mostrarToast(`${dias} dias adicionados!`);
                         carregarBarbearias();
                     } else {
-                        mostrarToast(resultado.erro, true);
+                        mostrarToast(result.erro, true);
                     }
                 } catch (error) {
                     mostrarToast('Erro ao adicionar dias', true);
@@ -715,19 +576,12 @@
             barbeariaEditando = null;
         }
 
-        function mostrarToast(mensagem, erro = false) {
+        function mostrarToast(msg, erro = false) {
             const toast = document.createElement('div');
             toast.className = `toast ${erro ? 'erro' : ''}`;
-            toast.textContent = mensagem;
+            toast.textContent = msg;
             document.body.appendChild(toast);
             setTimeout(() => toast.remove(), 3000);
-        }
-
-        function escapeHtml(text) {
-            if (!text) return '';
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
         }
 
         function logout() {
@@ -736,12 +590,28 @@
             document.getElementById('adminPanel').style.display = 'none';
         }
 
-        // Fechar modal ao clicar fora
         document.getElementById('editModal').addEventListener('click', (e) => {
-            if (e.target === document.getElementById('editModal')) {
-                fecharModal();
-            }
+            if (e.target === document.getElementById('editModal')) fecharModal();
         });
+
+        async function resetarSenha(id, nome) {
+            if (!confirm(`Resetar a senha de ${nome}? A senha nova vai aparecer na tela.`)) return;
+
+            try {
+                const response = await fetch(`${API_URL}/api/admin/barbearias/${id}/reset-senha`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${adminToken}` }
+                });
+
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.erro);
+
+                alert(`Nova senha de ${nome}:\n\n${data.novaSenha}\n\nCopia e guarda aí. Ela só aparece uma vez.`);
+                mostrarToast('Senha resetada');
+            } catch (error) {
+                mostrarToast('Erro: ' + error.message, true);
+            }
+        }
     </script>
 </body>
 
