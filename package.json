@@ -1,32 +1,19 @@
 {
-  "name": "agendapro",
+  "name": "barbearia",
   "version": "1.0.0",
-  "description": "Sistema de agendamento multi-segmento",
+  "description": "Sistema de agendamento para barbearias",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js"
   },
-  "dependencies": {
-    "bcryptjs": "^3.0.3",
-    "cors": "^2.8.6",
-    "express": "^4.22.2",
-    "jsonwebtoken": "^9.0.3",
-    "sqlite3": "^5.1.7"
-  },
-  "devDependencies": {
-    "nodemon": "^3.0.1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/grehgcl/agendapro.git"
-  },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
-  "bugs": {
-    "url": "https://github.com/grehgcl/agendapro/issues"
-  },
-  "homepage": "https://github.com/grehgcl/agendapro#readme"
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "pg": "^8.11.3",
+    "sqlite3": "^5.1.6"
+  }
 }
