@@ -3,6 +3,7 @@ const { query, isProd } = require('./db');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -12,12 +13,20 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
-console.log(`📁 Banco: ${isProd ? 'PostgreSQL/Supabase' : 'SQLite Local'}`);
+// ============= SQLITE =============
+console.log('📁 Iniciando com SQLite');
+
+const isRailway = process.env.RAILWAY_ENVIRONMENT;
+const dbPath = isRailway ? '/data/agendapro.db' : path.join(__dirname, 'agendapro.db');
+
+console.log('📁 Banco em:', dbPath);
+
 
 // ============= CRIAR TABELAS =============
 async function criarTabelas() {
     // PostgreSQL usa SERIAL no lugar de AUTOINCREMENT
     // e TIMESTAMP no lugar de DATETIME
+
     const idType = isProd ? 'SERIAL PRIMARY KEY' : 'INTEGER PRIMARY KEY AUTOINCREMENT';
     const dateType = isProd ? 'TIMESTAMP' : 'DATETIME';
 
@@ -110,7 +119,7 @@ async function criarTabelas() {
 criarTabelas();
 
 // ============= HELPERS =============
-// Converte? em $1, $2 automaticamente no PostgreSQL
+// Converte? em $1, $2 automaticamente no Railway
 const sql = (querySQL) => {
     if (!isProd) return querySQL;
     let i = 0;
@@ -342,97 +351,6 @@ app.post('/api/clientes', verificarAcesso, async (req, res) => {
     }
 });
 
-// BUSCAR META DO MÊS
-app.get('/api/meta', verificarAcesso, async (req, res) => {
-    const { ano, mes } = req.query;
-
-    if (!ano || !mes) {
-        return res.status(400).json({ erro: 'Dados incompletos' });
-    }
-
-    try {
-        const result = await query(sql(
-            'SELECT * FROM metas WHERE barbearia_id =? AND ano =? AND mes =?'
-        ), [req.barbeariaId, ano, mes]);
-        res.json({ valor: result[0] ? result[0].valor : 0 });
-    } catch (error) {
-        res.status(500).json({ erro: 'Erro no banco' });
-    }
-});
-
-// SALVAR/ATUALIZAR META
-app.post('/api/meta', verificarAcesso, async (req, res) => {
-    const { ano, mes, valor } = req.body;
-
-    if (!ano || !mes || valor === undefined) {
-        return res.status(400).json({ erro: 'Dados incompletos' });
-    }
-
-    try {
-        const sqlQuery = isProd
-            ? `INSERT INTO metas (barbearia_id, ano, mes, valor) VALUES ($1, $2, $3, $4)
-               ON CONFLICT(barbearia_id, ano, mes) DO UPDATE SET valor = $4 RETURNING id`
-            : `INSERT INTO metas (barbearia_id, ano, mes, valor) VALUES (?,?,?,?)
-               ON CONFLICT(barbearia_id, ano, mes) DO UPDATE SET valor =?`;
-
-        const params = isProd
-            ? [req.barbeariaId, ano, mes, valor]
-            : [req.barbeariaId, ano, mes, valor, valor];
-
-        await query(sqlQuery, params);
-        res.json({ sucesso: true });
-    } catch (error) {
-        console.error('Erro ao salvar meta:', error);
-        res.status(500).json({ erro: 'Erro ao salvar meta' });
-    }
-});
-
-// PLANO ATUAL
-app.get('/api/planos/atual', verificarAcesso, async (req, res) => {
-    try {
-        const b = await query(sql('SELECT plano FROM barbearias WHERE id =?'), [req.barbeariaId]);
-        res.json({ nome: b[0]?.plano || 'Grátis', limite: 'Sem limite' });
-    } catch (error) {
-        res.status(500).json({ erro: error.message });
-    }
-});
-
-// ============= ROTAS DESPESAS =============
-app.get('/api/despesas', verificarAcesso, async (req, res) => {
-    try {
-        const despesas = await query(
-            sql('SELECT * FROM despesas WHERE barbearia_id =? ORDER BY data DESC'),
-            [req.barbeariaId]
-        );
-        res.json(despesas);
-    } catch (error) {
-        res.status(500).json({ erro: error.message });
-    }
-});
-
-app.post('/api/despesas', verificarAcesso, async (req, res) => {
-    const { descricao, valor, categoria, data, pagamento, observacao } = req.body;
-
-    if (!descricao || !valor || !data) {
-        return res.status(400).json({ erro: 'Descrição, valor e data são obrigatórios' });
-    }
-
-    try {
-        const result = await query(sql(
-            `INSERT INTO despesas (barbearia_id, descricao, valor, categoria, data, pagamento, observacao)
-             VALUES (?,?,?,?,?,?,?) RETURNING id`
-        ), [req.barbeariaId, descricao, valor, categoria || 'outros', data, pagamento || 'pago', observacao || '']);
-
-        res.status(201).json({
-            id: result[0].id,
-            mensagem: 'Despesa cadastrada'
-        });
-    } catch (error) {
-        console.error('❌ Erro despesa:', error);
-        res.status(500).json({ erro: 'Erro ao salvar despesa' });
-    }
-});
-
 // ============= HEALTH CHECK =============
 app.get('/', (req, res) => {
     res.send('🚀 AgendaPro online!');
@@ -568,14 +486,107 @@ app.use((err, req, res, next) => {
     res.status(500).json({ erro: 'Erro interno do servidor' });
 });
 
+// BUSCAR META DO MÊS
+app.get('/api/meta', verificarAcesso, async (req, res) => {
+    const { ano, mes } = req.query;
+
+    if (!ano || !mes) {
+        return res.status(400).json({ erro: 'Dados incompletos' });
+    }
+
+    try {
+        const result = await query(sql(
+            'SELECT * FROM metas WHERE barbearia_id =? AND ano =? AND mes =?'
+        ), [req.barbeariaId, ano, mes]);
+        res.json({ valor: result[0] ? result[0].valor : 0 });
+    } catch (error) {
+        res.status(500).json({ erro: 'Erro no banco' });
+    }
+});
+
+// SALVAR/ATUALIZAR META
+app.post('/api/meta', verificarAcesso, async (req, res) => {
+    const { ano, mes, valor } = req.body;
+
+    if (!ano || !mes || valor === undefined) {
+        return res.status(400).json({ erro: 'Dados incompletos' });
+    }
+
+    try {
+        const sqlQuery = isProd
+            ? `INSERT INTO metas (barbearia_id, ano, mes, valor) VALUES ($1, $2, $3, $4)
+               ON CONFLICT(barbearia_id, ano, mes) DO UPDATE SET valor = $4 RETURNING id`
+            : `INSERT INTO metas (barbearia_id, ano, mes, valor) VALUES (?,?,?,?)
+               ON CONFLICT(barbearia_id, ano, mes) DO UPDATE SET valor =?`;
+
+        const params = isProd
+            ? [req.barbeariaId, ano, mes, valor]
+            : [req.barbeariaId, ano, mes, valor, valor];
+
+        await query(sqlQuery, params);
+        res.json({ sucesso: true });
+    } catch (error) {
+        console.error('Erro ao salvar meta:', error);
+        res.status(500).json({ erro: 'Erro ao salvar meta' });
+    }
+});
+
+// PLANO ATUAL
+app.get('/api/planos/atual', verificarAcesso, async (req, res) => {
+    try {
+        const b = await query(sql('SELECT plano FROM barbearias WHERE id =?'), [req.barbeariaId]);
+        res.json({ nome: b[0]?.plano || 'Grátis', limite: 'Sem limite' });
+    } catch (error) {
+        res.status(500).json({ erro: error.message });
+    }
+});
+
 // ============= SERVIDOR =============
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Servidor rodando na porta ${PORT}`);
-    console.log(`📁 Banco: ${isProd ? 'PostgreSQL/Supabase' : 'SQLite Local'}`);
+    console.log(`📁 Banco: ${isProd ? 'PostgreSQL' : 'SQLite'}`);
+});
+
+// ============= ROTAS DESPESAS =============
+app.get('/api/despesas', verificarAcesso, async (req, res) => {
+    try {
+        const despesas = await query(
+            sql('SELECT * FROM despesas WHERE barbearia_id =? ORDER BY data DESC'),
+            [req.barbeariaId]
+        );
+        res.json(despesas);
+    } catch (error) {
+        res.status(500).json({ erro: error.message });
+    }
+});
+
+app.post('/api/despesas', verificarAcesso, async (req, res) => {
+    const { descricao, valor, categoria, data, pagamento, observacao } = req.body;
+
+    if (!descricao || !valor || !data) {
+        return res.status(400).json({ erro: 'Descrição, valor e data são obrigatórios' });
+    }
+
+    try {
+        const result = await query(sql(
+            `INSERT INTO despesas (barbearia_id, descricao, valor, categoria, data, pagamento, observacao)
+             VALUES (?,?,?,?,?,?,?) RETURNING id`
+        ), [req.barbeariaId, descricao, valor, categoria || 'outros', data, pagamento || 'pago', observacao || '']);
+
+        res.status(201).json({
+            id: result[0].id,
+            mensagem: 'Despesa cadastrada'
+        });
+    } catch (error) {
+        console.error('❌ Erro despesa:', error);
+        res.status(500).json({ erro: 'Erro ao salvar despesa' });
+    }
 });
 
 // Graceful shutdown
 process.on('SIGINT', () => {
-    console.log('🔒 Encerrando...');
-    process.exit(0);
+    db.close(() => {
+        console.log('🔒 Banco fechado');
+        process.exit(0);
+    });
 });
