@@ -3,10 +3,9 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>Dashboard - AgendaPro</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
-        rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgendaPro - Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -16,767 +15,566 @@
 
         body {
             font-family: 'Inter', sans-serif;
-            background: #f8fafc;
-            overflow-x: hidden;
-        }
-
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 16px 24px;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-
-        .header-content {
-            max-width: 1400px;
-            margin: 0 auto;
+            background: #f8f9fc;
+            color: #1f2937;
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
+            height: 100vh;
+            overflow: hidden;
         }
 
-        .logo h2 {
-            font-size: 1.4em;
-            font-weight: 700;
-        }
-
-        .logo p {
-            font-size: 0.75em;
-            opacity: 0.8;
-        }
-
-        .user-info {
+        /* SIDEBAR */
+        .sidebar {
+            width: 260px;
+            background: white;
+            border-right: 1px solid #e5e7eb;
             display: flex;
-            align-items: center;
-            gap: 16px;
+            flex-direction: column;
+            padding: 24px 16px;
+            overflow-y: auto;
+            transition: left 0.3s;
         }
 
-        .user-name {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: rgba(255, 255, 255, 0.15);
-            padding: 8px 16px;
-            border-radius: 30px;
-        }
-
-        .user-avatar {
-            width: 32px;
-            height: 32px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 14px;
-        }
-
-        .btn-sair {
-            background: rgba(255, 255, 255, 0.15);
-            border: none;
-            padding: 8px 20px;
-            border-radius: 30px;
-            color: white;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-size: 14px;
-        }
-
-        .btn-sair:hover {
-            background: rgba(255, 255, 255, 0.25);
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 24px;
-        }
-
-        /* QUICK ACTIONS */
-        .quick-actions {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-            gap: 12px;
+        .logo-area {
+            padding: 0 8px 24px 8px;
+            border-bottom: 1px solid #f3f4f6;
             margin-bottom: 24px;
         }
 
-        .btn-quick {
-            padding: 14px 16px;
-            border: none;
-            border-radius: 14px;
-            font-weight: 600;
+        .logo-area h2 {
+            font-size: 18px;
+            font-weight: 700;
+            color: #6366f1;
+        }
+
+        .logo-area p {
+            font-size: 11px;
+            color: #9ca3af;
+            margin-top: 4px;
+        }
+
+        .menu {
+            flex: 1;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            color: #6b7280;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 4px;
             cursor: pointer;
-            background: white;
-            color: #334155;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
             transition: all 0.2s;
+        }
+
+        .menu-item:hover {
+            background: #f3f4f6;
+            color: #1f2937;
+        }
+
+        .menu-item.active {
+            background: #eef2ff;
+            color: #6366f1;
+            font-weight: 600;
+        }
+
+        .menu-section {
+            font-size: 11px;
+            font-weight: 600;
+            color: #9ca3af;
+            text-transform: uppercase;
+            padding: 16px 12px 8px 12px;
+        }
+
+        .user-box {
+            padding: 12px;
+            background: #f9fafb;
+            border-radius: 10px;
+            margin-top: auto;
+        }
+
+        .user-box-top {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            background: #6366f1;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
             font-size: 14px;
         }
 
-        .btn-quick.primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        .user-info h4 {
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .user-info p {
+            font-size: 11px;
+            color: #6b7280;
+        }
+
+        .btn-sair {
+            width: 100%;
+            padding: 8px;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #6b7280;
+            cursor: pointer;
+        }
+
+        .btn-sair:hover {
+            background: #f9fafb;
+        }
+
+        /* MAIN CONTENT */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .topbar {
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 16px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .btn-menu {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 22px;
+            cursor: pointer;
+            padding: 4px 8px;
+            color: #1f2937;
+        }
+
+        .topbar h1 {
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .topbar-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn-primary {
+            background: #6366f1;
             color: white;
+            border: none;
+            padding: 9px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
         }
 
-        .btn-quick:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        .btn-primary:hover {
+            background: #4f46e5;
         }
 
-        /* KPI CARDS - SÓ 3 */
-        .stats-grid {
+        .content-area {
+            flex: 1;
+            padding: 24px 32px;
+            overflow-y: auto;
+        }
+
+        /* STATS CARDS */
+        .stats-row {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(4, 1fr);
             gap: 16px;
             margin-bottom: 24px;
         }
 
         .stat-card {
             background: white;
-            border-radius: 16px;
-            padding: 20px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-            border-left: 4px solid;
-            transition: transform 0.3s;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 16px;
         }
 
-        .stat-card:hover {
-            transform: translateY(-3px);
-        }
-
-        .stat-card.agenda {
-            border-color: #3b82f6;
-        }
-
-        .stat-card.hoje {
-            border-color: #10b981;
-        }
-
-        .stat-card.saldo {
-            border-color: #8b5cf6;
-        }
-
-        .stat-info h3 {
+        .stat-label {
             font-size: 12px;
-            color: #64748b;
+            color: #6b7280;
             margin-bottom: 8px;
-            font-weight: 500;
         }
 
-        .stat-number {
-            font-size: 26px;
+        .stat-value {
+            font-size: 24px;
             font-weight: 700;
-            color: #1e293b;
+            color: #1f2937;
         }
 
-        .stat-sub {
+        .stat-change {
             font-size: 11px;
-            color: #94a3b8;
             margin-top: 4px;
         }
 
-        .stat-sub.up {
+        .stat-change.up {
             color: #10b981;
         }
 
-        .stat-sub.down {
+        .stat-change.down {
             color: #ef4444;
-        }
-
-        /* LAYOUT 70/30 */
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 24px;
-        }
-
-        .main-col,
-        .side-col {
-            display: flex;
-            flex-direction: column;
-            gap: 24px;
-        }
-
-        .card {
-            background: white;
-            border-radius: 16px;
-            padding: 20px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-        }
-
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 16px;
-            padding-bottom: 12px;
-            border-bottom: 1px solid #f1f5f9;
-        }
-
-        .card-header h3 {
-            font-size: 15px;
-            font-weight: 600;
-            color: #334155;
-        }
-
-        .card-header a {
-            color: #667eea;
-            text-decoration: none;
-            font-size: 12px;
-            font-weight: 500;
-        }
-
-        /* TABS AGENDA */
-        .agenda-tabs {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 16px;
-        }
-
-        .agenda-tab {
-            padding: 8px 14px;
-            border: none;
-            background: #f1f5f9;
-            border-radius: 8px;
-            font-size: 13px;
-            font-weight: 500;
-            color: #64748b;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .agenda-tab.active {
-            background: #667eea;
-            color: white;
-        }
-
-        .agenda-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px;
-            border-radius: 10px;
-            margin-bottom: 8px;
-            background: #f8fafc;
-            transition: all 0.2s;
-        }
-
-        .agenda-item:hover {
-            background: #f1f5f9;
-        }
-
-        .agenda-hora {
-            min-width: 55px;
-            font-weight: 700;
-            color: #3b82f6;
-            font-size: 13px;
-        }
-
-        .agenda-info {
-            flex: 1;
-        }
-
-        .agenda-nome {
-            font-weight: 600;
-            font-size: 14px;
-            color: #1e293b;
-        }
-
-        .agenda-servico {
-            font-size: 11px;
-            color: #64748b;
-            margin-top: 2px;
-        }
-
-        /* META COMPACTA */
-        .meta-card {
-            background: white;
-            border-radius: 16px;
-            padding: 16px;
-            border-left: 4px solid #667eea;
-        }
-
-        .meta-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: start;
-            margin-bottom: 12px;
-        }
-
-        .meta-title {
-            font-size: 12px;
-            color: #64748b;
-            font-weight: 500;
-        }
-
-        .meta-valor {
-            font-size: 20px;
-            font-weight: 700;
-            color: #1e293b;
-            margin-top: 2px;
-        }
-
-        .meta-edit {
-            background: #f1f5f9;
-            border: none;
-            padding: 4px 10px;
-            border-radius: 6px;
-            color: #667eea;
-            cursor: pointer;
-            font-size: 11px;
-            font-weight: 600;
-        }
-
-        .progress-bar {
-            background: #e2e8f0;
-            border-radius: 20px;
-            height: 8px;
-            overflow: hidden;
-            margin: 12px 0;
-        }
-
-        .progress-fill {
-            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-            border-radius: 20px;
-            height: 100%;
-            width: 0%;
-            transition: width 0.5s ease;
-        }
-
-        .meta-stats {
-            display: flex;
-            justify-content: space-between;
-            font-size: 11px;
-            color: #64748b;
-        }
-
-        .meta-stats strong {
-            color: #1e293b;
-        }
-
-        /* FLUXO CAIXA */
-        .fluxo-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 12px 0;
-            border-bottom: 1px solid #f1f5f9;
-        }
-
-        .fluxo-item:last-child {
-            border-bottom: none;
-            padding-bottom: 0;
-        }
-
-        .fluxo-label {
-            font-size: 13px;
-            color: #64748b;
-        }
-
-        .fluxo-valor {
-            font-size: 16px;
-            font-weight: 700;
-        }
-
-        .fluxo-valor.receita {
-            color: #10b981;
-        }
-
-        .fluxo-valor.despesa {
-            color: #ef4444;
-        }
-
-        .fluxo-valor.saldo {
-            color: #8b5cf6;
-            font-size: 18px;
         }
 
         /* CALENDÁRIO SEMANA */
-        .week-calendar {
+        .calendar-wrapper {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .calendar-header {
             display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 6px;
-            margin-bottom: 16px;
+            grid-template-columns: 60px repeat(7, 1fr);
+            border-bottom: 1px solid #e5e7eb;
+            background: #f9fafb;
         }
 
-        .week-day {
+        .calendar-header-cell {
+            padding: 12px 8px;
             text-align: center;
-            padding: 10px 4px;
-            border-radius: 10px;
-            background: #f8fafc;
-            cursor: pointer;
-            transition: all 0.2s;
+            border-right: 1px solid #e5e7eb;
         }
 
-        .week-day.active {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+        .calendar-header-cell:first-child {
+            border-right: 1px solid #e5e7eb;
         }
 
-        .week-day:hover:not(.active) {
-            background: #e2e8f0;
-        }
-
-        .week-day-name {
-            font-size: 10px;
+        .day-name {
+            font-size: 11px;
             font-weight: 600;
-            opacity: 0.7;
+            color: #6b7280;
+            text-transform: uppercase;
         }
 
-        .week-day-number {
-            font-size: 15px;
+        .day-number {
+            font-size: 16px;
             font-weight: 700;
-            margin: 2px 0;
+            color: #1f2937;
+            margin-top: 4px;
         }
 
-        .week-day-count {
-            font-size: 9px;
+        .day-number.today {
+            background: #6366f1;
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .calendar-body {
+            display: grid;
+            grid-template-columns: 60px repeat(7, 1fr);
+        }
+
+        .time-column {
+            border-right: 1px solid #e5e7eb;
+        }
+
+        .time-slot {
+            height: 60px;
+            border-bottom: 1px solid #f3f4f6;
+            padding: 4px 8px;
+            font-size: 11px;
+            color: #9ca3af;
+            text-align: right;
+        }
+
+        .day-column {
+            border-right: 1px solid #e5e7eb;
+            position: relative;
+        }
+
+        .day-column:last-child {
+            border-right: none;
+        }
+
+        .day-grid {
+            position: relative;
+        }
+
+        .hour-line {
+            height: 60px;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        .appointment-card {
+            position: absolute;
+            left: 4px;
+            right: 4px;
+            border-radius: 6px;
+            padding: 6px 8px;
+            font-size: 11px;
+            cursor: pointer;
+            overflow: hidden;
+            border-left: 3px solid;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        }
+
+        .appointment-card.blue {
+            background: #dbeafe;
+            border-color: #3b82f6;
+            color: #1e40af;
+        }
+
+        .appointment-card.green {
+            background: #d1fae5;
+            border-color: #10b981;
+            color: #065f46;
+        }
+
+        .appointment-card.pink {
+            background: #fce7f3;
+            border-color: #ec4899;
+            color: #9f1239;
+        }
+
+        .appointment-card.purple {
+            background: #ede9fe;
+            border-color: #8b5cf6;
+            color: #5b21b6;
+        }
+
+        .apt-time {
+            font-weight: 700;
+            font-size: 10px;
+            margin-bottom: 2px;
+        }
+
+        .apt-name {
+            font-weight: 600;
+            margin-bottom: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .apt-service {
+            font-size: 10px;
             opacity: 0.8;
         }
 
-        .agendamentos-dia {
-            max-height: 280px;
-            overflow-y: auto;
+        .apt-price {
+            position: absolute;
+            top: 4px;
+            right: 6px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 700;
+            font-size: 10px;
         }
 
-        canvas {
-            max-height: 220px;
-            width: 100%;
-        }
-
-        .modal {
+        .sidebar-overlay {
             display: none;
             position: fixed;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
+            right: 0;
+            bottom: 0;
             background: rgba(0, 0, 0, 0.5);
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-
-        .modal.show {
-            display: flex;
-        }
-
-        .modal-content {
-            background: white;
-            border-radius: 20px;
-            max-width: 400px;
-            width: 90%;
-            overflow: hidden;
-        }
-
-        .modal-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px;
-        }
-
-        .modal-body {
-            padding: 24px;
-        }
-
-        .modal-body input {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e2e8f0;
-            border-radius: 10px;
-            font-size: 16px;
-        }
-
-        .modal-footer {
-            display: flex;
-            gap: 12px;
-            padding: 20px;
-            border-top: 1px solid #e2e8f0;
-        }
-
-        .btn-salvar,
-        .btn-cancelar {
-            flex: 1;
-            border: none;
-            padding: 12px;
-            border-radius: 10px;
-            cursor: pointer;
-            font-weight: 600;
-        }
-
-        .btn-salvar {
-            background: #10b981;
-            color: white;
-        }
-
-        .btn-cancelar {
-            background: #64748b;
-            color: white;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 32px 16px;
-            color: #94a3b8;
-        }
-
-        .empty-state p {
-            margin-bottom: 12px;
-            font-size: 14px;
-        }
-
-        .empty-state button {
-            background: #667eea;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            font-size: 13px;
+            z-index: 998;
         }
 
         @media (max-width: 1024px) {
-            .dashboard-grid {
-                grid-template-columns: 1fr;
+            .btn-menu {
+                display: block;
             }
 
-            .stats-grid {
+            .sidebar {
+                position: fixed;
+                left: -260px;
+                top: 0;
+                height: 100vh;
+                z-index: 999;
+            }
+
+            .sidebar.show {
+                left: 0;
+            }
+
+            .sidebar-overlay.show {
+                display: block;
+            }
+
+            .stats-row {
                 grid-template-columns: repeat(2, 1fr);
+            }
+
+            .content-area {
+                padding: 16px;
+            }
+
+            .topbar {
+                padding: 16px;
             }
         }
 
         @media (max-width: 640px) {
-            .stats-grid {
+            .stats-row {
                 grid-template-columns: 1fr;
-            }
-
-            .quick-actions {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            .week-calendar {
-                gap: 4px;
-            }
-
-            .week-day {
-                padding: 6px 2px;
             }
         }
     </style>
 </head>
 
 <body>
-    <div class="header">
-        <div class="header-content">
-            <div class="logo">
-                <h2>📋 AgendaPro</h2>
-                <p>Sistema de Gestão</p>
-            </div>
-            <div class="user-info">
-                <div class="user-name">
-                    <div class="user-avatar" id="userAvatar"></div>
-                    <span id="userName">Carregando...</span>
-                </div>
-                <button class="btn-sair" onclick="logout()">Sair</button>
-            </div>
+    <aside class="sidebar">
+        <div class="logo-area">
+            <h2>💈 AgendaPro</h2>
+            <p id="nomeEstabelecimento">Sua Barbearia</p>
         </div>
-    </div>
 
-    <div class="container">
-        <!-- QUICK ACTIONS -->
-        <div class="quick-actions">
-            <button class="btn-quick primary" onclick="location.href='agenda-barbearia.html'">
-                ➕ Novo Agendamento
-            </button>
-            <button class="btn-quick" onclick="location.href='clientes-barbearia.html'">
-                👥 Novo Cliente
-            </button>
-            <button class="btn-quick" onclick="location.href='despesas-barbearia.html'">
-                💰 Nova Despesa
-            </button>
-            <button class="btn-quick" onclick="location.href='servicos-barbearia.html'">
+        <nav class="menu">
+            <a class="menu-item active" onclick="mostrarDashboard()">
+                🏠 Dashboard
+            </a>
+            <a class="menu-item" onclick="mostrarAgenda()">
+                📅 Agenda
+            </a>
+            <a class="menu-item" onclick="location.href='clientes-barbearia.html'">
+                👥 Clientes
+            </a>
+            <a class="menu-item" onclick="location.href='servicos-barbearia.html'">
                 ✂️ Serviços
-            </button>
-            <button class="btn-quick" onclick="location.href='planos.html'"
-                style="background: #fef3c7; color: #92400e;">
-                💎 Planos
-            </button>
+            </a>
+            <a class="menu-item" onclick="location.href='despesas-barbearia.html'">
+                💰 Financeiro
+            </a>
+
+            <div class="menu-section">Configurações</div>
+
+            <a class="menu-item" onclick="location.href='planos.html'">
+                🎯 Ver Planos
+            </a>
+            <a class="menu-item" onclick="location.href='meu-plano.html'">
+                💎 Meu Plano
+            </a>
+            <a class="menu-item" onclick="alert('Em breve')">
+                ⚙️ Estabelecimento
+            </a>
+            <a class="menu-item" onclick="alert('Em breve')">
+                ❓ Central de Ajuda
+            </a>
+        </nav>
+
+        <div class="user-box">
+            <div class="user-box-top">
+                <div class="user-avatar" id="userAvatar">A</div>
+                <div class="user-info">
+                    <h4 id="userName">Admin</h4>
+                    <p id="userEmail">admin@barbearia.com</p>
+                </div>
+            </div>
+            <button class="btn-sair" onclick="logout()">Sair</button>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div class="topbar">
+            <div class="topbar-left">
+                <button class="btn-menu" onclick="toggleSidebar()">☰</button>
+                <h1 id="pageTitle">Dashboard</h1>
+            </div>
+            <div class="topbar-actions">
+                <button class="btn-primary" onclick="window.location.href='agendamento.html?from=dashboard'">
+                    + Novo Agendamento
+                </button>
+            </div>
         </div>
 
-        <!-- 3 KPIs PRINCIPAIS -->
-        <div class="stats-grid">
-            <div class="stat-card agenda">
-                <div class="stat-info">
-                    <h3>📅 Agendamentos Hoje</h3>
-                    <div class="stat-number" id="agendamentosHoje">0</div>
-                    <div class="stat-sub" id="agendamentosSub">-</div>
+        <div class="content-area">
+            <div class="stats-row">
+                <div class="stat-card">
+                    <div class="stat-label">Agendamentos Hoje</div>
+                    <div class="stat-value" id="agendamentosHoje">0</div>
+                    <div class="stat-change up" id="agendamentosSub">-</div>
                 </div>
-            </div>
-            <div class="stat-card hoje">
-                <div class="stat-info">
-                    <h3>💰 Faturamento Hoje</h3>
-                    <div class="stat-number" id="faturamentoHoje">R$ 0</div>
-                    <div class="stat-sub up" id="faturamentoSub">-</div>
+                <div class="stat-card">
+                    <div class="stat-label">Faturamento Hoje</div>
+                    <div class="stat-value" id="faturamentoHoje">R$ 0</div>
+                    <div class="stat-change up">+12% vs ontem</div>
                 </div>
-            </div>
-            <div class="stat-card saldo">
-                <div class="stat-info">
-                    <h3>💎 Saldo do Mês</h3>
-                    <div class="stat-number" id="saldoMes">R$ 0</div>
-                    <div class="stat-sub" id="saldoSub">-</div>
+                <div class="stat-card">
+                    <div class="stat-label">Clientes do Mês</div>
+                    <div class="stat-value" id="clientesMes">0</div>
+                    <div class="stat-change up">+8 novos</div>
                 </div>
-            </div>
-        </div>
-
-        <!-- GRID 70/30 -->
-        <div class="dashboard-grid">
-            <!-- COLUNA PRINCIPAL -->
-            <div class="main-col">
-                <div class="card">
-                    <div class="card-header">
-                        <h3>📅 Agenda</h3>
-                        <a href="agenda-barbearia.html">Ver Completa →</a>
-                    </div>
-                    <div class="agenda-tabs">
-                        <button class="agenda-tab active" onclick="trocarTabAgenda(0)">Hoje</button>
-                        <button class="agenda-tab" onclick="trocarTabAgenda(1)">Amanhã</button>
-                        <button class="agenda-tab" onclick="trocarTabAgenda(2)">Semana</button>
-                    </div>
-                    <div id="agendaList">
-                        <div class="empty-state">Carregando...</div>
-                    </div>
-                </div>
-
-                <div class="card">
-                    <div class="card-header">
-                        <h3>📊 Calendário da Semana</h3>
-                    </div>
-                    <div class="week-calendar" id="weekCalendar"></div>
-                    <div class="agendamentos-dia" id="agendamentosSemanaList">
-                        <div class="empty-state">Selecione um dia</div>
-                    </div>
-                </div>
-
-                <div class="card">
-                    <div class="card-header">
-                        <h3>📈 Faturamento Mensal</h3>
-                    </div>
-                    <canvas id="faturamentoChart"></canvas>
+                <div class="stat-card">
+                    <div class="stat-label">Ticket Médio</div>
+                    <div class="stat-value" id="ticketMedio">R$ 0</div>
+                    <div class="stat-change">-</div>
                 </div>
             </div>
 
-            <!-- SIDEBAR -->
-            <div class="side-col">
-                <div class="meta-card" id="metaCard">
-                    <div class="meta-header">
-                        <div>
-                            <div class="meta-title">🎯 META - <span id="metaMes">Mês</span></div>
-                            <div class="meta-valor" id="metaValorDisplay">R$ 0</div>
-                        </div>
-                        <button class="meta-edit" onclick="abrirModalMeta()">Editar</button>
-                    </div>
-                    <div class="progress-bar">
-                        <div class="progress-fill" id="progressFill"></div>
-                    </div>
-                    <div class="meta-stats">
-                        <span><strong id="metaPercentual">0%</strong></span>
-                        <span>Faltam <strong id="metaFalta">R$ 0</strong></span>
-                    </div>
+            <div class="calendar-wrapper">
+                <div class="calendar-header" id="calendarHeader">
+                    <div class="calendar-header-cell"></div>
                 </div>
-                <div class="card" id="planoCard">
-                    <div class="card-header">
-                        <h3>💎 Plano Atual</h3>
-                        <a href="planos.html">Upgrade →</a>
-                    </div>
-                    <div id="planoInfo">
-                        <div style="text-align: center; padding: 16px 0;">
-                            <div style="font-size: 24px; font-weight: 700; color: #8b5cf6; margin-bottom: 8px;"
-                                id="planoNome">
-                                Carregando...
-                            </div>
-                            <div style="font-size: 12px; color: #64748b; margin-bottom: 16px;" id="planoLimite">
-                                -
-                            </div>
-                            <button class="btn-quick" style="width: 100%;" onclick="location.href='planos.html'">
-                                Ver Planos
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card">
-                    <div class="card-header">
-                        <h3>💰 Fluxo de Caixa</h3>
-                        <a href="despesas-barbearia.html">Detalhes →</a>
-                    </div>
-                    <div id="fluxoCaixa">
-                        <div class="empty-state">Carregando...</div>
-                    </div>
-                </div>
-
-                <div class="card">
-                    <div class="card-header">
-                        <h3>🏆 Serviços Populares</h3>
-                        <a href="servicos-barbearia.html">Gerenciar →</a>
-                    </div>
-                    <div id="servicosPopularesList">
-                        <div class="empty-state">Carregando...</div>
-                    </div>
-                </div>
-
-                <div class="card">
-                    <div class="card-header">
-                        <h3>👥 Clientes Recentes</h3>
-                        <a href="clientes-barbearia.html">Ver Todos →</a>
-                    </div>
-                    <div id="clientesRecentesList">
-                        <div class="empty-state">Carregando...</div>
-                    </div>
+                <div class="calendar-body" id="calendarBody">
+                    <div class="time-column" id="timeColumn"></div>
                 </div>
             </div>
         </div>
-    </div>
+    </main>
 
-    <div id="metaModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>🎯 Definir Meta de Faturamento</h3>
-            </div>
-            <div class="modal-body">
-                <p style="margin-bottom: 10px; font-size: 14px;">Meta para <strong id="metaModalMes"></strong></p>
-                <input type="text" id="metaValorInput" placeholder="R$ 5.000,00">
-            </div>
-            <div class="modal-footer">
-                <button class="btn-cancelar" onclick="fecharModalMeta()">Cancelar</button>
-                <button class="btn-salvar" onclick="salvarMeta()">Salvar Meta</button>
-            </div>
-        </div>
-    </div>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script>
         const API_URL = window.location.origin;
-        let barbearia = null;
-        let faturamentoChart = null;
-        let metaAtual = 0;
-        let faturamentoAtualMes = 0;
-        let todosAgendamentos = [];
-        let tabAgendaAtual = 0;
-
-        function formatMoney(value) {
-            return value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        }
-
-        barbearia = JSON.parse(localStorage.getItem('barbearia'));
+        let barbearia = JSON.parse(localStorage.getItem('barbearia'));
         if (!barbearia) window.location.href = '/login-barbearia.html';
 
-        document.getElementById('userName').textContent = barbearia.nome || barbearia.email;
-        document.getElementById('userAvatar').textContent = (barbearia.nome || barbearia.email)[0].toUpperCase();
+        document.getElementById('userName').textContent = barbearia.nome || 'Admin';
+        document.getElementById('userEmail').textContent = barbearia.email;
+        document.getElementById('userAvatar').textContent = (barbearia.nome || 'A')[0].toUpperCase();
+        document.getElementById('nomeEstabelecimento').textContent = barbearia.nome || 'Sua Barbearia';
+
+        function toggleSidebar() {
+            document.querySelector('.sidebar').classList.toggle('show');
+            let overlay = document.querySelector('.sidebar-overlay');
+            if (!overlay) {
+                overlay = document.createElement('div');
+                overlay.className = 'sidebar-overlay';
+                overlay.onclick = toggleSidebar;
+                document.body.appendChild(overlay);
+            }
+            overlay.classList.toggle('show');
+        }
 
         async function fetchAPI(endpoint, options = {}) {
             const response = await fetch(`${API_URL}${endpoint}`, {
@@ -790,294 +588,111 @@
             return response;
         }
 
-        async function carregarDashboard() {
-            try {
-                const response = await fetchAPI('/api/agendamentos');
-                todosAgendamentos = await response.json();
-
-                const hoje = new Date();
-                const hojeStr = hoje.toISOString().split('T')[0];
-                const ano = hoje.getFullYear();
-                const mes = hoje.getMonth() + 1;
-                const mesStr = `${ano}-${mes.toString().padStart(2, '0')}`;
-
-                const agendamentosHoje = todosAgendamentos.filter(a => a.data === hojeStr);
-                const agendamentosMes = todosAgendamentos.filter(a => a.data.startsWith(mesStr));
-
-                // KPIs
-                document.getElementById('agendamentosHoje').textContent = agendamentosHoje.length;
-                document.getElementById('agendamentosSub').textContent = `${agendamentosMes.length} no mês`;
-
-                const faturamentoHojeValor = agendamentosHoje.reduce((sum, a) => sum + (a.preco || 0), 0);
-                document.getElementById('faturamentoHoje').textContent = `R$ ${formatMoney(faturamentoHojeValor)}`;
-
-                faturamentoAtualMes = agendamentosMes.reduce((sum, a) => sum + (a.preco || 0), 0);
-
-                // Despesas para saldo
-                try {
-                    const despesasRes = await fetchAPI('/api/despesas');
-                    const despesas = await despesasRes.json();
-                    const despesasMes = despesas.filter(d => d.data.startsWith(mesStr));
-                    const totalDespesas = despesasMes.reduce((sum, d) => sum + parseFloat(d.valor), 0);
-                    const saldo = faturamentoAtualMes - totalDespesas;
-
-                    document.getElementById('saldoMes').textContent = `R$ ${formatMoney(saldo)}`;
-                    document.getElementById('saldoSub').textContent = `Receitas: R$ ${formatMoney(faturamentoAtualMes)}`;
-
-                    document.getElementById('fluxoCaixa').innerHTML = `
-                        <div class="fluxo-item">
-                            <span class="fluxo-label">📈 Receitas</span>
-                            <span class="fluxo-valor receita">R$ ${formatMoney(faturamentoAtualMes)}</span>
-                        </div>
-                        <div class="fluxo-item">
-                            <span class="fluxo-label">📉 Despesas</span>
-                            <span class="fluxo-valor despesa">R$ ${formatMoney(totalDespesas)}</span>
-                        </div>
-                        <div class="fluxo-item">
-                            <span class="fluxo-label">💰 Saldo</span>
-                            <span class="fluxo-valor saldo">R$ ${formatMoney(saldo)}</span>
-                        </div>
-                    `;
-                } catch (e) {
-                    document.getElementById('saldoMes').textContent = `R$ ${formatMoney(faturamentoAtualMes)}`;
-                    document.getElementById('saldoSub').textContent = 'Sem despesas cadastradas';
-                    document.getElementById('fluxoCaixa').innerHTML = '<div class="empty-state"><p>💰 Cadastre despesas para ver o saldo</p><button onclick="location.href=\'despesas-barbearia.html\'">Cadastrar Despesa</button></div>';
-                }
-
-                // Agenda com tabs
-                trocarTabAgenda(0);
-
-                // Clientes
-                const clientesRes = await fetchAPI('/api/clientes');
-                const clientes = await clientesRes.json();
-                const clientesHtml = clientes.slice(-4).reverse().map(c => `
-                    <div class="agenda-item">
-                        <div class="agenda-info">
-                            <div class="agenda-nome">${c.nome}</div>
-                            <div class="agenda-servico">${c.telefone || 'Sem telefone'}</div>
-                        </div>
-                    </div>
-                `).join('');
-                document.getElementById('clientesRecentesList').innerHTML = clientesHtml || '<div class="empty-state"><p>📭 Nenhum cliente</p><button onclick="location.href=\'clientes-barbearia.html\'">Cadastrar Cliente</button></div>';
-
-                // 5. Carrega Planos
-                try {
-                    const planoRes = await fetchAPI('/api/planos/atual');
-                    const plano = await planoRes.json();
-
-                    document.getElementById('planoNome').textContent = plano.nome;
-                    document.getElementById('planoLimite').textContent = plano.limite;
-
-                } catch (e) {
-                    document.getElementById('planoNome').textContent = 'Grátis';
-                    document.getElementById('planoLimite').textContent = 'Erro ao carregar';
-                }
-
-
-                // Serviços populares
-                const servicoCount = {};
-                todosAgendamentos.forEach(a => { servicoCount[a.servico] = (servicoCount[a.servico] || 0) + 1; });
-                const servicosPop = Object.entries(servicoCount).sort((a, b) => b[1] - a[1]).slice(0, 4);
-                const servicosHtml = servicosPop.map(([nome, qtd]) => `
-                    <div class="agenda-item">
-                        <div class="agenda-info">
-                            <div class="agenda-nome">${nome}</div>
-                            <div class="agenda-servico">${qtd} agendamentos</div>
-                        </div>
-                    </div>
-                `).join('');
-                document.getElementById('servicosPopularesList').innerHTML = servicosHtml || '<div class="empty-state"><p>📭 Nenhum serviço</p><button onclick="location.href=\'servicos-barbearia.html\'">Criar Serviço</button></div>';
-
-                // Calendário semana
-                const semana = [];
-                for (let i = 0; i < 7; i++) {
-                    const data = new Date(hoje);
-                    data.setDate(hoje.getDate() + i);
-                    const dataStr = data.toISOString().split('T')[0];
-                    const agDia = todosAgendamentos.filter(a => a.data === dataStr);
-                    semana.push({ data: dataStr, dia: data.getDate(), count: agDia.length, agendamentos: agDia });
-                }
-                const weekHtml = semana.map((d, idx) => `
-                    <div class="week-day ${idx === 0 ? 'active' : ''}" onclick="mostrarDiaSemana(${idx}, ${JSON.stringify(d.agendamentos).replace(/"/g, '&quot;')})">
-                        <div class="week-day-name">${['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][new Date(d.data).getDay()]}</div>
-                        <div class="week-day-number">${d.dia}</div>
-                        <div class="week-day-count">${d.count}</div>
-                    </div>
-                `).join('');
-                document.getElementById('weekCalendar').innerHTML = weekHtml;
-                if (semana[0]) mostrarDiaSemana(0, semana[0].agendamentos);
-
-                // Gráfico
-                const faturamentoMensal = Array(12).fill(0);
-                todosAgendamentos.forEach(a => {
-                    const mesAgend = parseInt(a.data.split('-')[1]) - 1;
-                    if (mesAgend >= 0 && mesAgend < 12) faturamentoMensal[mesAgend] += (a.preco || 0);
-                });
-                if (faturamentoChart) faturamentoChart.destroy();
-                const ctx = document.getElementById('faturamentoChart').getContext('2d');
-                faturamentoChart = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'],
-                        datasets: [{
-                            label: 'Faturamento (R$)',
-                            data: faturamentoMensal,
-                            borderColor: '#667eea',
-                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                            fill: true,
-                            tension: 0.4,
-                            borderWidth: 3
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: true,
-                        plugins: { legend: { display: false } },
-                        scales: {
-                            y: { beginAtZero: true, ticks: { callback: v => 'R$ ' + v } }
-                        }
-                    }
-                });
-
-                await carregarMeta();
-
-            } catch (error) {
-                console.error('Erro:', error);
-            }
-        }
-
-        function trocarTabAgenda(tab) {
-            tabAgendaAtual = tab;
-            document.querySelectorAll('.agenda-tab').forEach((el, i) => {
-                el.classList.toggle('active', i === tab);
-            });
-
-            const hoje = new Date();
-            let agendamentosFiltrados = [];
-            let emptyMsg = '';
-
-            if (tab === 0) { // Hoje
-                const hojeStr = hoje.toISOString().split('T')[0];
-                agendamentosFiltrados = todosAgendamentos.filter(a => a.data === hojeStr);
-                emptyMsg = 'Nenhum agendamento para hoje';
-            } else if (tab === 1) { // Amanhã
-                const amanha = new Date(hoje);
-                amanha.setDate(hoje.getDate() + 1);
-                const amanhaStr = amanha.toISOString().split('T')[0];
-                agendamentosFiltrados = todosAgendamentos.filter(a => a.data === amanhaStr);
-                emptyMsg = 'Nenhum agendamento para amanhã';
-            } else { // Semana
-                const fimSemana = new Date(hoje);
-                fimSemana.setDate(hoje.getDate() + 7);
-                agendamentosFiltrados = todosAgendamentos.filter(a => {
-                    const dataAg = new Date(a.data);
-                    return dataAg >= hoje && dataAg <= fimSemana;
-                });
-                emptyMsg = 'Nenhum agendamento na semana';
-            }
-
-            const html = agendamentosFiltrados.slice(0, 8).map(ag => `
-                <div class="agenda-item">
-                    <div class="agenda-hora">${ag.hora}</div>
-                    <div class="agenda-info">
-                        <div class="agenda-nome">${ag.nome}</div>
-                        <div class="agenda-servico">${ag.servico} - R$ ${formatMoney(ag.preco)}</div>
-                    </div>
-                </div>
-            `).join('');
-
-            document.getElementById('agendaList').innerHTML = html || `<div class="empty-state"><p>📭 ${emptyMsg}</p><button onclick="location.href='agenda-barbearia.html'">Novo Agendamento</button></div>`;
-        }
-
-        function mostrarDiaSemana(idx, agendamentos) {
-            document.querySelectorAll('.week-day').forEach((d, i) => {
-                d.classList.toggle('active', i === idx);
-            });
-            const html = (agendamentos || []).map(ag => `
-                <div class="agenda-item">
-                    <div class="agenda-hora">${ag.hora}</div>
-                    <div class="agenda-info">
-                        <div class="agenda-nome">${ag.nome}</div>
-                        <div class="agenda-servico">${ag.servico} - R$ ${formatMoney(ag.preco)}</div>
-                    </div>
-                </div>
-            `).join('');
-            document.getElementById('agendamentosSemanaList').innerHTML = html || '<div class="empty-state">📭 Nenhum agendamento neste dia</div>';
-        }
-
-        async function carregarMeta() {
-            const hoje = new Date();
-            const ano = hoje.getFullYear();
-            const mes = hoje.getMonth() + 1;
-            document.getElementById('metaMes').textContent = `${mes.toString().padStart(2, '0')}/${ano}`;
-            document.getElementById('metaModalMes').textContent = `${mes.toString().padStart(2, '0')}/${ano}`;
-
-            const response = await fetchAPI(`/api/meta?ano=${ano}&mes=${mes}`);
-            const meta = await response.json();
-            metaAtual = meta.valor || 0;
-            document.getElementById('metaValorDisplay').textContent = `R$ ${formatMoney(metaAtual)}`;
-
-            const percentual = metaAtual > 0 ? (faturamentoAtualMes / metaAtual) * 100 : 0;
-            const progresso = Math.min(percentual, 100);
-            document.getElementById('progressFill').style.width = `${progresso}%`;
-            document.getElementById('metaPercentual').textContent = `${percentual.toFixed(0)}%`;
-            const falta = Math.max(0, metaAtual - faturamentoAtualMes);
-            document.getElementById('metaFalta').textContent = `R$ ${formatMoney(falta)}`;
-        }
-
-        function abrirModalMeta() {
-            document.getElementById('metaValorInput').value = metaAtual > 0 ? `R$ ${formatMoney(metaAtual)}` : '';
-            document.getElementById('metaModal').classList.add('show');
-        }
-        function fecharModalMeta() { document.getElementById('metaModal').classList.remove('show'); }
-
-        // Formata valor enquanto digita
-        document.getElementById('metaValorInput').addEventListener('input', function (e) {
-            let valor = e.target.value.replace(/\D/g, '');
-            valor = (valor / 100).toFixed(2);
-            valor = valor.replace('.', ',');
-            valor = valor.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-            e.target.value = valor ? 'R$ ' + valor : '';
-        });
-
-        async function salvarMeta() {
-            let valorInput = document.getElementById('metaValorInput').value;
-            let valorNumerico = valorInput.replace(/\./g, '').replace(/,/g, '.').replace(/[^\d.]/g, '');
-            const valor = parseFloat(valorNumerico) || 0;
-
-            const hoje = new Date();
-            const ano = hoje.getFullYear();
-            const mes = hoje.getMonth() + 1;
-
-            if (valor <= 0) {
-                alert('Digite um valor válido');
-                return;
-            }
-
-            try {
-                const response = await fetchAPI('/api/meta', {
-                    method: 'POST',
-                    body: JSON.stringify({ ano, mes, valor })
-                });
-
-                const resultado = await response.json();
-
-                if (response.ok) {
-                    alert('✅ Meta salva com sucesso!');
-                    fecharModalMeta();
-                    carregarMeta();
-                } else {
-                    alert('Erro: ' + (resultado.erro || 'Não foi possível salvar'));
-                }
-            } catch (error) {
-                console.error('Erro:', error);
-                alert('Erro ao conectar com o servidor');
-            }
+        function formatMoney(value) {
+            return value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
 
         function logout() {
             localStorage.removeItem('barbearia');
             window.location.href = '/login-barbearia.html';
+        }
+
+        function mostrarDashboard() {
+            document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById('pageTitle').textContent = 'Dashboard';
+        }
+
+        function mostrarAgenda() {
+            window.location.href = 'agendamentos.html';
+        }
+
+        async function carregarDashboard() {
+            const hoje = new Date();
+            const inicioSemana = new Date(hoje);
+            inicioSemana.setDate(hoje.getDate() - hoje.getDay() + 1);
+
+            const headerEl = document.getElementById('calendarHeader');
+            headerEl.innerHTML = '<div class="calendar-header-cell"></div>';
+
+            for (let i = 0; i < 7; i++) {
+                const dia = new Date(inicioSemana);
+                dia.setDate(inicioSemana.getDate() + i);
+                const isHoje = dia.toDateString() === hoje.toDateString();
+
+                headerEl.innerHTML += `
+                    <div class="calendar-header-cell">
+                        <div class="day-name">${['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB'][dia.getDay()]}</div>
+                        <div class="day-number ${isHoje ? 'today' : ''}">${dia.getDate()}</div>
+                    </div>
+                `;
+            }
+
+            const timeCol = document.getElementById('timeColumn');
+            timeCol.innerHTML = '';
+            for (let h = 8; h <= 20; h++) {
+                timeCol.innerHTML += `<div class="time-slot">${h}:00</div>`;
+            }
+
+            const bodyEl = document.getElementById('calendarBody');
+            bodyEl.innerHTML = timeCol.outerHTML;
+
+            const response = await fetchAPI('/api/agendamentos');
+            const agendamentos = await response.json();
+
+            for (let i = 0; i < 7; i++) {
+                const dia = new Date(inicioSemana);
+                dia.setDate(inicioSemana.getDate() + i);
+                const diaStr = dia.toISOString().split('T')[0];
+                const agsDoDia = agendamentos.filter(a => a.data === diaStr);
+
+                let dayCol = '<div class="day-column"><div class="day-grid">';
+
+                for (let h = 8; h <= 20; h++) {
+                    dayCol += '<div class="hour-line"></div>';
+                }
+
+                agsDoDia.forEach(ag => {
+                    const [hora, min] = ag.hora.split(':').map(Number);
+                    const top = (hora - 8) * 60 + min;
+                    const duracao = 45;
+                    const colors = ['blue', 'green', 'pink', 'purple'];
+                    const color = colors[Math.floor(Math.random() * colors.length)];
+
+                    dayCol += `
+                        <div class="appointment-card ${color}" style="top: ${top}px; height: ${duracao}px;" onclick="editarAgendamento(${ag.id})">
+                            <div class="apt-price">R$ ${ag.preco}</div>
+                            <div class="apt-time">${ag.hora}</div>
+                            <div class="apt-name">${ag.nome}</div>
+                            <div class="apt-service">${ag.servico}</div>
+                        </div>
+                    `;
+                });
+
+                dayCol += '</div></div>';
+                bodyEl.innerHTML += dayCol;
+            }
+
+            const hojeStr = hoje.toISOString().split('T')[0];
+            const agsHoje = agendamentos.filter(a => a.data === hojeStr);
+            const mesStr = `${hoje.getFullYear()}-${(hoje.getMonth() + 1).toString().padStart(2, '0')}`;
+            const agsMes = agendamentos.filter(a => a.data.startsWith(mesStr));
+
+            document.getElementById('agendamentosHoje').textContent = agsHoje.length;
+            document.getElementById('agendamentosSub').textContent = `${agsMes.length} no mês`;
+
+            const fatHoje = agsHoje.reduce((s, a) => s + (a.preco || 0), 0);
+            document.getElementById('faturamentoHoje').textContent = `R$ ${formatMoney(fatHoje)}`;
+
+            const clientesUnicos = new Set(agsMes.map(a => a.nome)).size;
+            document.getElementById('clientesMes').textContent = clientesUnicos;
+
+            const ticket = agsMes.length > 0 ? agsMes.reduce((s, a) => s + (a.preco || 0), 0) / agsMes.length : 0;
+            document.getElementById('ticketMedio').textContent = `R$ ${formatMoney(ticket)}`;
+        }
+
+        function editarAgendamento(id) {
+            window.location.href = `agendamento.html?id=${id}&from=dashboard`;
         }
 
         carregarDashboard();

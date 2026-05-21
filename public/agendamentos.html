@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="pt">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agendamentos - AgendaPro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f8f9fc;
+            color: #1f2937;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 260px;
+            background: white;
+            border-right: 1px solid #e5e7eb;
+            display: flex;
+            flex-direction: column;
+            padding: 24px 16px;
+            overflow-y: auto;
+            transition: left 0.3s;
+        }
+
+        .logo-area {
+            padding: 0 8px 24px 8px;
+            border-bottom: 1px solid #f3f4f6;
+            margin-bottom: 24px;
+        }
+
+        .logo-area h2 {
+            font-size: 18px;
+            font-weight: 700;
+            color: #6366f1;
+        }
+
+        .logo-area p {
+            font-size: 11px;
+            color: #9ca3af;
+            margin-top: 4px;
+        }
+
+        .menu {
+            flex: 1;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            color: #6b7280;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .menu-item:hover {
+            background: #f3f4f6;
+            color: #1f2937;
+        }
+
+        .menu-item.active {
+            background: #eef2ff;
+            color: #6366f1;
+            font-weight: 600;
+        }
+
+        .menu-section {
+            font-size: 11px;
+            font-weight: 600;
+            color: #9ca3af;
+            text-transform: uppercase;
+            padding: 16px 12px 8px 12px;
+        }
+
+        .user-box {
+            padding: 12px;
+            background: #f9fafb;
+            border-radius: 10px;
+            margin-top: auto;
+        }
+
+        .user-box-top {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            background: #6366f1;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .user-info h4 {
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .user-info p {
+            font-size: 11px;
+            color: #6b7280;
+        }
+
+        .btn-sair {
+            width: 100%;
+            padding: 8px;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #6b7280;
+            cursor: pointer;
+        }
+
+        .btn-sair:hover {
+            background: #f9fafb;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .topbar {
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 16px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .btn-menu {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 22px;
+            cursor: pointer;
+            padding: 4px 8px;
+            color: #1f2937;
+        }
+
+        .topbar h1 {
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .topbar-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn-primary {
+            background: #6366f1;
+            color: white;
+            border: none;
+            padding: 9px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary:hover {
+            background: #4f46e5;
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #6b7280;
+            border: 1px solid #e5e7eb;
+            padding: 9px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-secondary:hover {
+            background: #f9fafb;
+        }
+
+        .content-area {
+            flex: 1;
+            padding: 24px 32px;
+            overflow-y: auto;
+        }
+
+        .table-container {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid #f3f4f6;
+            font-size: 13px;
+        }
+
+        th {
+            background: #f9fafb;
+            font-weight: 600;
+            color: #6b7280;
+            font-size: 11px;
+            text-transform: uppercase;
+        }
+
+        tr:hover td {
+            background: #f9fafb;
+        }
+
+        .btn {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 2px;
+            font-size: 11px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .btn-edit {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .btn-cancel {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .btn-delete {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn:hover {
+            opacity: 0.85;
+        }
+
+        .status {
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .status-agendado {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .status-concluido {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-cancelado {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 998;
+        }
+
+        @media (max-width: 1024px) {
+            .btn-menu {
+                display: block;
+            }
+
+            .sidebar {
+                position: fixed;
+                left: -260px;
+                top: 0;
+                height: 100vh;
+                z-index: 999;
+            }
+
+            .sidebar.show {
+                left: 0;
+            }
+
+            .sidebar-overlay.show {
+                display: block;
+            }
+
+            .content-area {
+                padding: 16px;
+            }
+
+            .topbar {
+                padding: 16px;
+            }
+        }
+
+        @media (max-width: 768px) {
+
+            th,
+            td {
+                font-size: 11px;
+                padding: 8px;
+            }
+
+            .btn {
+                padding: 4px 8px;
+                font-size: 10px;
+            }
+
+            .topbar-actions {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .topbar-actions button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <aside class="sidebar">
+        <div class="logo-area">
+            <h2>💈 AgendaPro</h2>
+            <p id="nomeEstabelecimento">Sua Barbearia</p>
+        </div>
+
+        <nav class="menu">
+            <a class="menu-item" onclick="location.href='dashboard-barbearia.html'">
+                🏠 Dashboard
+            </a>
+            <a class="menu-item active">
+                📅 Agenda
+            </a>
+            <a class="menu-item" onclick="location.href='clientes-barbearia.html'">
+                👥 Clientes
+            </a>
+            <a class="menu-item" onclick="location.href='servicos-barbearia.html'">
+                ✂️ Serviços
+            </a>
+            <a class="menu-item" onclick="location.href='despesas-barbearia.html'">
+                💰 Financeiro
+            </a>
+
+            <div class="menu-section">Configurações</div>
+
+            <a class="menu-item" onclick="location.href='meu-plano.html'">
+                💎 Meu Plano
+            </a>
+            <a class="menu-item" onclick="alert('Em breve')">
+                ⚙️ Estabelecimento
+            </a>
+            <a class="menu-item" onclick="alert('Em breve')">
+                ❓ Central de Ajuda
+            </a>
+        </nav>
+
+        <div class="user-box">
+            <div class="user-box-top">
+                <div class="user-avatar" id="userAvatar">A</div>
+                <div class="user-info">
+                    <h4 id="userName">Admin</h4>
+                    <p id="userEmail">admin@barbearia.com</p>
+                </div>
+                <button class="btn-sair" onclick="logout()">Sair</button>
+            </div>
+    </aside>
+
+    <main class="main-content">
+        <div class="topbar">
+            <div class="topbar-left">
+                <button class="btn-menu" onclick="toggleSidebar()">☰</button>
+                <h1>Agendamentos</h1>
+            </div>
+            <div class="topbar-actions">
+                <button class="btn-primary" onclick="window.location.href='agendamento.html'">
+                    + Novo Agendamento
+                </button>
+                <button class="btn-secondary" onclick="window.location.href='dashboard-barbearia.html'">
+                    ← Voltar
+                </button>
+            </div>
+        </div>
+
+        <div class="content-area">
+            <div class="table-container">
+                <table id="tabelaAgendamentos">
+                    <thead>
+                        <tr>
+                            <th>Cliente</th>
+                            <th>Serviço</th>
+                            <th>Data</th>
+                            <th>Hora</th>
+                            <th>Valor</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="listaAgendamentos">
+                        <tr>
+                            <td colspan="7" style="text-align: center; color: #9ca3af;">Carregando...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const API_URL = '/api';
+        const barbearia = JSON.parse(localStorage.getItem('barbearia'));
+        if (!barbearia) window.location.href = 'login-barbearia.html';
+
+        document.getElementById('userName').textContent = barbearia.nome || 'Admin';
+        document.getElementById('userEmail').textContent = barbearia.email;
+        document.getElementById('userAvatar').textContent = (barbearia.nome || 'A')[0].toUpperCase();
+        document.getElementById('nomeEstabelecimento').textContent = barbearia.nome || 'Sua Barbearia';
+
+        function toggleSidebar() {
+            document.querySelector('.sidebar').classList.toggle('show');
+            let overlay = document.querySelector('.sidebar-overlay');
+            if (!overlay) {
+                overlay = document.createElement('div');
+                overlay.className = 'sidebar-overlay';
+                overlay.onclick = toggleSidebar;
+                document.body.appendChild(overlay);
+            }
+            overlay.classList.toggle('show');
+        }
+
+        async function fetchAPI(endpoint, options = {}) {
+            const response = await fetch(`${API_URL}${endpoint}`, {
+                ...options,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${barbearia.token}`
+                }
+            });
+            if (response.status === 401) window.location.href = 'login-barbearia.html';
+            return response;
+        }
+
+        function logout() {
+            localStorage.removeItem('barbearia');
+            window.location.href = '/login-barbearia.html';
+        }
+
+        async function carregarAgendamentos() {
+            try {
+                const response = await fetchAPI('/agendamentos');
+                const agendamentos = await response.json();
+                const tbody = document.getElementById('listaAgendamentos');
+
+                if (agendamentos.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #9ca3af;">Nenhum agendamento encontrado</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = agendamentos.map(ag => `
+                    <tr>
+                        <td><strong>${ag.nome}</strong></td>
+                        <td>${ag.servico}</td>
+                        <td>${ag.data.split('-').reverse().join('/')}</td>
+                        <td>${ag.hora}</td>
+                        <td>R$ ${ag.preco.toFixed(2)}</td>
+                        <td><span class="status status-${ag.status}">${ag.status}</span></td>
+                        <td>
+                            <button class="btn btn-edit" onclick="window.location.href='agendamento.html?id=${ag.id}'">✏️</button>
+                            ${ag.status === 'agendado' ? `<button class="btn btn-cancel" onclick="cancelarAgendamento(${ag.id})">🚫</button>` : ''}
+                            <button class="btn btn-delete" onclick="deletarAgendamento(${ag.id})">🗑️</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                document.getElementById('listaAgendamentos').innerHTML = '<tr><td colspan="7" style="text-align: center; color: #ef4444;">Erro ao carregar</td></tr>';
+            }
+        }
+
+        async function cancelarAgendamento(id) {
+            if (!confirm('Cancelar esse agendamento?')) return;
+
+            try {
+                const response = await fetchAPI(`/agendamentos/${id}/cancelar`, { method: 'PATCH' });
+                if (response.ok) {
+                    alert('Cancelado!');
+                    carregarAgendamentos();
+                }
+            } catch (error) {
+                alert('Erro ao cancelar');
+            }
+        }
+
+        async function deletarAgendamento(id) {
+            if (!confirm('Excluir permanentemente?')) return;
+
+            try {
+                const response = await fetchAPI(`/agendamentos/${id}`, { method: 'DELETE' });
+                if (response.ok) {
+                    alert('Excluído!');
+                    carregarAgendamentos();
+                }
+            } catch (error) {
+                alert('Erro ao excluir');
+            }
+        }
+
+        carregarAgendamentos();
+    </script>
+</body>
+
+</html>

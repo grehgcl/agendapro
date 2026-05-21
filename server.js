@@ -16,8 +16,6 @@ console.log(`📁 Banco: ${isProd ? 'PostgreSQL/Supabase' : 'SQLite Local'}`);
 
 // ============= CRIAR TABELAS =============
 async function criarTabelas() {
-    // PostgreSQL usa SERIAL no lugar de AUTOINCREMENT
-    // e TIMESTAMP no lugar de DATETIME
     const idType = isProd ? 'SERIAL PRIMARY KEY' : 'INTEGER PRIMARY KEY AUTOINCREMENT';
     const dateType = isProd ? 'TIMESTAMP' : 'DATETIME';
 
@@ -110,7 +108,6 @@ async function criarTabelas() {
 criarTabelas();
 
 // ============= HELPERS =============
-// Converte? em $1, $2 automaticamente no PostgreSQL
 const sql = (querySQL) => {
     if (!isProd) return querySQL;
     let i = 0;
@@ -138,6 +135,104 @@ const verificarAcesso = async (req, res, next) => {
         next();
     } catch (error) {
         return res.status(401).json({ erro: 'Token inválido ou expirado' });
+    }
+};
+
+// ============= MIDDLEWARE DE PLANOS =============
+const limitesPlanos = {
+    trial: { agendamentos: 50, clientes: 30, servicos: 5 },
+    basico: { agendamentos: 200, clientes: 100, servicos: 15 },
+    pro: { agendamentos: 999999, clientes: 999999, servicos: 999999 },
+    premium: { agendamentos: 999999, clientes: 999999, servicos: 999999 }
+};
+
+const verificarPlano = async (req, res, next) => {
+    try {
+        const b = req.barbearia;
+        const hoje = new Date();
+
+        if (b.plano === 'trial' && b.data_expiracao) {
+            const expira = new Date(b.data_expiracao);
+            if (expira < hoje) {
+                return res.status(403).json({
+                    erro: 'Teste expirado',
+                    codigo: 'TRIAL_EXPIRED',
+                    mensagem: 'Seu período de teste acabou. Faça upgrade para continuar.'
+                });
+            }
+        }
+
+        if (b.plano !== 'trial' && b.status !== 'ativo') {
+            return res.status(403).json({
+                erro: 'Plano inativo',
+                codigo: 'PLAN_INACTIVE',
+                mensagem: 'Seu plano está inativo. Regularize o pagamento.'
+            });
+        }
+
+        req.limites = limitesPlanos[b.plano] || limitesPlanos.trial;
+        next();
+    } catch (error) {
+        console.error('❌ Erro verificarPlano:', error);
+        return res.status(500).json({ erro: 'Erro ao verificar plano' });
+    }
+};
+
+const verificarLimite = (tipo) => async (req, res, next) => {
+    try {
+        const limite = req.limites[tipo];
+
+        if (!limite || limite >= 999999) return next();
+
+        let total = 0;
+
+        if (tipo === 'agendamentos') {
+            const mesAtual = new Date().toISOString().slice(0, 7);
+            const result = await query(sql(
+                `SELECT COUNT(*) as total FROM agendamentos
+                 WHERE barbearia_id =? AND data LIKE? AND status!= 'cancelado'`
+            ), [req.barbeariaId, `${mesAtual}%`]);
+            total = parseInt(result[0].total) || 0;
+        }
+
+        if (tipo === 'clientes') {
+            const result = await query(sql(
+                `SELECT COUNT(*) as total FROM clientes WHERE barbearia_id =?`
+            ), [req.barbeariaId]);
+            total = parseInt(result[0].total) || 0;
+        }
+
+        if (tipo === 'servicos') {
+            const result = await query(sql(
+                `SELECT COUNT(*) as total FROM servicos WHERE barbearia_id =?`
+            ), [req.barbeariaId]);
+            total = parseInt(result[0].total) || 0;
+        }
+
+        console.log(`Limite ${tipo}: ${total}/${limite}`);
+
+        if (total >= limite) {
+            const nomes = {
+                servicos: limite === 1 ? 'serviço' : 'serviços',
+                clientes: limite === 1 ? 'cliente' : 'clientes',
+                agendamentos: limite === 1 ? 'agendamento' : 'agendamentos'
+            };
+
+            return res.status(403).json({
+                erro: 'Limite atingido',
+                codigo: 'LIMIT_REACHED',
+                tipo,
+                usado: total,
+                limite,
+                mensagem: `Você atingiu o limite de ${limite} ${nomes[tipo]} do seu plano. Faça upgrade para adicionar mais.`
+            });
+        }
+
+        req.usoAtual = { tipo, usado: total, limite };
+        next();
+    } catch (error) {
+        console.error('❌ Erro verificarLimite:', error);
+        return res.status(500).json({ erro: 'Erro ao verificar limite' });
     }
 };
 
@@ -259,7 +354,7 @@ app.get('/api/servicos', verificarAcesso, async (req, res) => {
     }
 });
 
-app.post('/api/servicos', verificarAcesso, async (req, res) => {
+app.post('/api/servicos', verificarAcesso, verificarPlano, verificarLimite('servicos'), async (req, res) => {
     const { nome, preco, duracao, descricao } = req.body;
 
     if (!nome || !preco) {
@@ -276,7 +371,32 @@ app.post('/api/servicos', verificarAcesso, async (req, res) => {
     }
 });
 
-// ============= ROTAS AGENDAMENTOS =============
+app.put('/api/servicos/:id', verificarAcesso, async (req, res) => {
+    const { nome, preco, duracao, descricao } = req.body;
+    const { id } = req.params;
+
+    try {
+        await query(sql(
+            'UPDATE servicos SET nome =?, preco =?, duracao =?, descricao =? WHERE id =? AND barbearia_id =?'
+        ), [nome, preco, duracao, descricao, id, req.barbeariaId]);
+        res.json({ mensagem: 'Serviço atualizado' });
+    } catch (error) {
+        res.status(500).json({ erro: error.message });
+    }
+});
+
+app.delete('/api/servicos/:id', verificarAcesso, async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        await query(sql('DELETE FROM servicos WHERE id =? AND barbearia_id =?'), [id, req.barbeariaId]);
+        res.json({ mensagem: 'Serviço excluído' });
+    } catch (error) {
+        res.status(500).json({ erro: error.message });
+    }
+});
+
+// ============= ROTAS AGENDAMENTOS - ATUALIZADAS =============
 app.get('/api/agendamentos', verificarAcesso, async (req, res) => {
     try {
         const agendamentos = await query(sql(
@@ -289,7 +409,7 @@ app.get('/api/agendamentos', verificarAcesso, async (req, res) => {
     }
 });
 
-app.post('/api/agendamentos', verificarAcesso, async (req, res) => {
+app.post('/api/agendamentos', verificarAcesso, verificarPlano, verificarLimite('agendamentos'), async (req, res) => {
     const { nome, servico, preco, data, hora, telefone } = req.body;
 
     if (!nome || !servico || !preco || !data || !hora) {
@@ -302,6 +422,69 @@ app.post('/api/agendamentos', verificarAcesso, async (req, res) => {
              VALUES (?,?,?,?,?,?,?) RETURNING id`
         ), [req.barbeariaId, nome, servico, preco, data, hora, telefone || '']);
         res.json({ id: result[0].id, mensagem: 'Agendamento criado' });
+    } catch (error) {
+        res.status(500).json({ erro: error.message });
+    }
+});
+
+// EDITAR AGENDAMENTO COMPLETO
+app.put('/api/agendamentos/:id', verificarAcesso, async (req, res) => {
+    const { nome, servico, preco, data, hora, telefone, status } = req.body;
+    const { id } = req.params;
+
+    if (!nome || !servico || !preco || !data || !hora) {
+        return res.status(400).json({ erro: 'Dados incompletos' });
+    }
+
+    try {
+        const result = await query(sql(`
+            UPDATE agendamentos
+            SET nome =?, servico =?, preco =?, data =?, hora =?, telefone =?, status =?
+            WHERE id =? AND barbearia_id =?
+        `), [nome, servico, preco, data, hora, telefone || '', status || 'agendado', id, req.barbeariaId]);
+
+        const changed = isProd ? result.rowCount : result.changes;
+        if (changed === 0) {
+            return res.status(404).json({ erro: 'Agendamento não encontrado' });
+        }
+
+        res.json({ mensagem: 'Agendamento atualizado' });
+    } catch (error) {
+        console.error('Erro editar agendamento:', error);
+        res.status(500).json({ erro: error.message });
+    }
+});
+
+// CANCELAR AGENDAMENTO
+app.patch('/api/agendamentos/:id/cancelar', verificarAcesso, async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const result = await query(sql(
+            'UPDATE agendamentos SET status =? WHERE id =? AND barbearia_id =?'
+        ), ['cancelado', id, req.barbeariaId]);
+
+        const changed = isProd ? result.rowCount : result.changes;
+        if (changed === 0) {
+            return res.status(404).json({ erro: 'Agendamento não encontrado' });
+        }
+
+        res.json({ mensagem: 'Agendamento cancelado' });
+    } catch (error) {
+        res.status(500).json({ erro: error.message });
+    }
+});
+
+// DELETAR AGENDAMENTO
+app.delete('/api/agendamentos/:id', verificarAcesso, async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        await query(sql(
+            'DELETE FROM agendamentos WHERE id =? AND barbearia_id =?'
+        ), [id, req.barbeariaId]);
+
+        res.json({ mensagem: 'Agendamento excluído' });
     } catch (error) {
         res.status(500).json({ erro: error.message });
     }
@@ -320,7 +503,7 @@ app.get('/api/clientes', verificarAcesso, async (req, res) => {
     }
 });
 
-app.post('/api/clientes', verificarAcesso, async (req, res) => {
+app.post('/api/clientes', verificarAcesso, verificarPlano, verificarLimite('clientes'), async (req, res) => {
     const { nome, telefone, email } = req.body;
 
     if (!nome || !telefone) {
@@ -339,61 +522,6 @@ app.post('/api/clientes', verificarAcesso, async (req, res) => {
     } catch (error) {
         console.error('❌ Erro cliente:', error);
         res.status(500).json({ erro: 'Erro ao salvar cliente' });
-    }
-});
-
-// BUSCAR META DO MÊS
-app.get('/api/meta', verificarAcesso, async (req, res) => {
-    const { ano, mes } = req.query;
-
-    if (!ano || !mes) {
-        return res.status(400).json({ erro: 'Dados incompletos' });
-    }
-
-    try {
-        const result = await query(sql(
-            'SELECT * FROM metas WHERE barbearia_id =? AND ano =? AND mes =?'
-        ), [req.barbeariaId, ano, mes]);
-        res.json({ valor: result[0] ? result[0].valor : 0 });
-    } catch (error) {
-        res.status(500).json({ erro: 'Erro no banco' });
-    }
-});
-
-// SALVAR/ATUALIZAR META
-app.post('/api/meta', verificarAcesso, async (req, res) => {
-    const { ano, mes, valor } = req.body;
-
-    if (!ano || !mes || valor === undefined) {
-        return res.status(400).json({ erro: 'Dados incompletos' });
-    }
-
-    try {
-        const sqlQuery = isProd
-            ? `INSERT INTO metas (barbearia_id, ano, mes, valor) VALUES ($1, $2, $3, $4)
-               ON CONFLICT(barbearia_id, ano, mes) DO UPDATE SET valor = $4 RETURNING id`
-            : `INSERT INTO metas (barbearia_id, ano, mes, valor) VALUES (?,?,?,?)
-               ON CONFLICT(barbearia_id, ano, mes) DO UPDATE SET valor =?`;
-
-        const params = isProd
-            ? [req.barbeariaId, ano, mes, valor]
-            : [req.barbeariaId, ano, mes, valor, valor];
-
-        await query(sqlQuery, params);
-        res.json({ sucesso: true });
-    } catch (error) {
-        console.error('Erro ao salvar meta:', error);
-        res.status(500).json({ erro: 'Erro ao salvar meta' });
-    }
-});
-
-// PLANO ATUAL
-app.get('/api/planos/atual', verificarAcesso, async (req, res) => {
-    try {
-        const b = await query(sql('SELECT plano FROM barbearias WHERE id =?'), [req.barbeariaId]);
-        res.json({ nome: b[0]?.plano || 'Grátis', limite: 'Sem limite' });
-    } catch (error) {
-        res.status(500).json({ erro: error.message });
     }
 });
 
@@ -430,6 +558,199 @@ app.post('/api/despesas', verificarAcesso, async (req, res) => {
     } catch (error) {
         console.error('❌ Erro despesa:', error);
         res.status(500).json({ erro: 'Erro ao salvar despesa' });
+    }
+});
+
+// ============= ROTAS META =============
+app.get('/api/meta', verificarAcesso, async (req, res) => {
+    const { ano, mes } = req.query;
+
+    if (!ano || !mes) {
+        return res.status(400).json({ erro: 'Dados incompletos' });
+    }
+
+    try {
+        const result = await query(sql(
+            'SELECT * FROM metas WHERE barbearia_id =? AND ano =? AND mes =?'
+        ), [req.barbeariaId, ano, mes]);
+        res.json({ valor: result[0] ? result[0].valor : 0 });
+    } catch (error) {
+        res.status(500).json({ erro: 'Erro no banco' });
+    }
+});
+
+app.post('/api/meta', verificarAcesso, async (req, res) => {
+    const { ano, mes, valor } = req.body;
+
+    if (!ano || !mes || valor === undefined) {
+        return res.status(400).json({ erro: 'Dados incompletos' });
+    }
+
+    try {
+        const sqlQuery = isProd
+            ? `INSERT INTO metas (barbearia_id, ano, mes, valor) VALUES ($1, $2, $3, $4)
+               ON CONFLICT(barbearia_id, ano, mes) DO UPDATE SET valor = $4 RETURNING id`
+            : `INSERT INTO metas (barbearia_id, ano, mes, valor) VALUES (?,?,?,?)
+               ON CONFLICT(barbearia_id, ano, mes) DO UPDATE SET valor =?`;
+
+        const params = isProd
+            ? [req.barbeariaId, ano, mes, valor]
+            : [req.barbeariaId, ano, mes, valor, valor];
+
+        await query(sqlQuery, params);
+        res.json({ sucesso: true });
+    } catch (error) {
+        console.error('Erro ao salvar meta:', error);
+        res.status(500).json({ erro: 'Erro ao salvar meta' });
+    }
+});
+
+// ============= ROTAS PLANOS =============
+app.get('/api/planos', async (req, res) => {
+    const planos = [
+        {
+            id: 'trial',
+            nome: 'Trial',
+            preco: 0,
+            limite_agendamentos: 50,
+            limite_clientes: 30,
+            limite_servicos: 5
+        },
+        {
+            id: 'basico',
+            nome: 'Básico',
+            preco: 29.90,
+            limite_agendamentos: 200,
+            limite_clientes: 100,
+            limite_servicos: 15
+        },
+        {
+            id: 'pro',
+            nome: 'Pro',
+            preco: 59.90,
+            limite_agendamentos: 999999,
+            limite_clientes: 999999,
+            limite_servicos: 999999
+        },
+        {
+            id: 'premium',
+            nome: 'Premium',
+            preco: 99.90,
+            limite_agendamentos: 999999,
+            limite_clientes: 999999,
+            limite_servicos: 999999
+        }
+    ];
+    res.json(planos);
+});
+
+app.get('/api/plano', verificarAcesso, verificarPlano, async (req, res) => {
+    try {
+        const b = req.barbearia;
+        const mesAtual = new Date().toISOString().slice(0, 7);
+
+        const [agend, cli, serv] = await Promise.all([
+            query(sql(`SELECT COUNT(*) as total FROM agendamentos WHERE barbearia_id =? AND data LIKE? AND status!= 'cancelado'`),
+                [req.barbeariaId, `${mesAtual}%`]),
+            query(sql(`SELECT COUNT(*) as total FROM clientes WHERE barbearia_id =?`), [req.barbeariaId]),
+            query(sql(`SELECT COUNT(*) as total FROM servicos WHERE barbearia_id =?`), [req.barbeariaId])
+        ]);
+
+        const planosInfo = {
+            trial: { nome: 'Trial', preco: 0 },
+            basico: { nome: 'Básico', preco: 29.90 },
+            pro: { nome: 'Pro', preco: 59.90 },
+            premium: { nome: 'Premium', preco: 99.90 }
+        };
+
+        const info = planosInfo[b.plano] || planosInfo.trial;
+
+        res.json({
+            nome: info.nome,
+            preco: info.preco,
+            status: b.plano === 'trial' ? 'trial' : 'ativo',
+            data_fim: b.data_expiracao,
+            limites: {
+                agendamentos: { usado: parseInt(agend[0].total) || 0, total: req.limites.agendamentos },
+                clientes: { usado: parseInt(cli[0].total) || 0, total: req.limites.clientes },
+                servicos: { usado: parseInt(serv[0].total) || 0, total: req.limites.servicos }
+            }
+        });
+    } catch (error) {
+        console.error('Erro ao buscar plano:', error);
+        res.status(500).json({ erro: 'Erro ao buscar plano' });
+    }
+});
+
+app.get('/api/plano/status', verificarAcesso, verificarPlano, async (req, res) => {
+    try {
+        const b = req.barbearia;
+        const hoje = new Date();
+        const expira = new Date(b.data_expiracao);
+        const diasRestantes = Math.ceil((expira - hoje) / (1000 * 60 * 60 * 24));
+        const mesAtual = hoje.toISOString().slice(0, 7);
+
+        const [agend, cli, serv] = await Promise.all([
+            query(sql(`SELECT COUNT(*) as total FROM agendamentos WHERE barbearia_id =? AND data LIKE? AND status!= 'cancelado'`),
+                [req.barbeariaId, `${mesAtual}%`]),
+            query(sql(`SELECT COUNT(*) as total FROM clientes WHERE barbearia_id =?`), [req.barbeariaId]),
+            query(sql(`SELECT COUNT(*) as total FROM servicos WHERE barbearia_id =?`), [req.barbeariaId])
+        ]);
+
+        res.json({
+            plano: b.plano,
+            status: b.status,
+            data_expiracao: b.data_expiracao,
+            dias_restantes: diasRestantes > 0 ? diasRestantes : 0,
+            limites: req.limites,
+            uso: {
+                agendamentos: parseInt(agend[0].total) || 0,
+                clientes: parseInt(cli[0].total) || 0,
+                servicos: parseInt(serv[0].total) || 0
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ erro: error.message });
+    }
+});
+
+app.get('/api/planos/atual', verificarAcesso, async (req, res) => {
+    try {
+        const b = req.barbearia;
+        res.json({
+            nome: b.plano,
+            limite: limitesPlanos[b.plano] || limitesPlanos.trial
+        });
+    } catch (error) {
+        res.status(500).json({ erro: error.message });
+    }
+});
+
+app.post('/api/assinatura/upgrade', verificarAcesso, async (req, res) => {
+    const { plano_id } = req.body;
+
+    const planosValidos = ['basico', 'pro', 'premium'];
+
+    if (!plano_id || !planosValidos.includes(plano_id)) {
+        return res.status(400).json({ erro: 'Plano inválido' });
+    }
+
+    try {
+        const novaDataExpiracao = new Date();
+        novaDataExpiracao.setDate(novaDataExpiracao.getDate() + 30);
+
+        await query(sql(
+            'UPDATE barbearias SET plano =?, status =?, data_expiracao =? WHERE id =?'
+        ), [plano_id, 'ativo', novaDataExpiracao.toISOString(), req.barbeariaId]);
+
+        res.json({
+            mensagem: `Upgrade para ${plano_id} realizado com sucesso!`,
+            plano: plano_id,
+            expira_em: novaDataExpiracao
+        });
+    } catch (error) {
+        console.error('Erro no upgrade:', error);
+        res.status(500).json({ erro: 'Erro ao fazer upgrade' });
     }
 });
 

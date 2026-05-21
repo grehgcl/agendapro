@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin - AgendaPro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -13,66 +14,218 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f5f5f5;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-
-        .header {
-            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
-            color: white;
-            padding: 20px;
-            border-radius: 16px;
-            margin-bottom: 30px;
+            font-family: 'Inter', sans-serif;
+            background: #f8f9fc;
+            color: #1f2937;
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
+            height: 100vh;
+            overflow: hidden;
         }
 
+        /* SIDEBAR */
+        .sidebar {
+            width: 260px;
+            background: white;
+            border-right: 1px solid #e5e7eb;
+            display: flex;
+            flex-direction: column;
+            padding: 24px 16px;
+            overflow-y: auto;
+            transition: left 0.3s;
+        }
+
+        .logo-area {
+            padding: 0 8px 24px 8px;
+            border-bottom: 1px solid #f3f4f6;
+            margin-bottom: 24px;
+        }
+
+        .logo-area h2 {
+            font-size: 18px;
+            font-weight: 700;
+            color: #dc2626;
+        }
+
+        .logo-area p {
+            font-size: 11px;
+            color: #9ca3af;
+            margin-top: 4px;
+        }
+
+        .menu {
+            flex: 1;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            color: #6b7280;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .menu-item:hover {
+            background: #f3f4f6;
+            color: #1f2937;
+        }
+
+        .menu-item.active {
+            background: #fef2f2;
+            color: #dc2626;
+            font-weight: 600;
+        }
+
+        .user-box {
+            padding: 12px;
+            background: #f9fafb;
+            border-radius: 10px;
+            margin-top: auto;
+        }
+
+        .user-box-top {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            background: #dc2626;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .user-info h4 {
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .user-info p {
+            font-size: 11px;
+            color: #6b7280;
+        }
+
+        .btn-sair {
+            width: 100%;
+            padding: 8px;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #6b7280;
+            cursor: pointer;
+        }
+
+        .btn-sair:hover {
+            background: #f9fafb;
+        }
+
+        /* MAIN CONTENT */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .topbar {
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 16px 32px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .btn-menu {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 22px;
+            cursor: pointer;
+            padding: 4px 8px;
+            color: #1f2937;
+        }
+
+        .topbar h1 {
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .content-area {
+            flex: 1;
+            padding: 24px 32px;
+            overflow-y: auto;
+        }
+
+        /* STATS */
         .stats {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
         }
 
         .stat-card {
             background: white;
-            border-radius: 16px;
-            padding: 20px;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 16px;
             text-align: center;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
 
         .stat-number {
-            font-size: 2.5em;
-            font-weight: bold;
-            color: #dc3545;
+            font-size: 28px;
+            font-weight: 700;
+            color: #dc2626;
         }
 
+        .stat-card div:last-child {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 4px;
+        }
+
+        /* SEARCH */
         .search-bar {
-            margin-bottom: 20px;
+            margin-bottom: 16px;
         }
 
         .search-bar input {
             width: 100%;
-            padding: 12px;
-            border: 2px solid #e0e0e0;
-            border-radius: 12px;
-            font-size: 16px;
+            padding: 10px 14px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
         }
 
+        .search-bar input:focus {
+            outline: none;
+            border-color: #dc2626;
+        }
+
+        /* TABLE */
         .table-container {
-            overflow-x: auto;
             background: white;
-            border-radius: 16px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            overflow-x: auto;
         }
 
         table {
@@ -82,60 +235,82 @@
 
         th,
         td {
-            padding: 12px;
+            padding: 12px 16px;
             text-align: left;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid #f3f4f6;
+            font-size: 13px;
         }
 
         th {
-            background: #f8f9fa;
+            background: #f9fafb;
             font-weight: 600;
+            color: #6b7280;
+            font-size: 11px;
+            text-transform: uppercase;
+        }
+
+        tr:hover td {
+            background: #f9fafb;
         }
 
         .status-ativo {
-            color: #28a745;
-            font-weight: bold;
+            color: #059669;
+            font-weight: 600;
+            font-size: 12px;
         }
 
         .status-inativo {
-            color: #dc3545;
-            font-weight: bold;
+            color: #dc2626;
+            font-weight: 600;
+            font-size: 12px;
         }
 
         .btn {
-            padding: 6px 12px;
+            padding: 5px 10px;
             border: none;
-            border-radius: 8px;
+            border-radius: 6px;
             cursor: pointer;
             margin: 2px;
-            font-size: 0.8em;
+            font-size: 11px;
+            font-weight: 600;
+            transition: all 0.2s;
         }
 
         .btn-ativar {
-            background: #28a745;
+            background: #10b981;
             color: white;
         }
 
         .btn-desativar {
-            background: #dc3545;
+            background: #ef4444;
             color: white;
         }
 
         .btn-dias {
-            background: #ffc107;
-            color: #333;
+            background: #f59e0b;
+            color: white;
         }
 
         .btn-editar {
-            background: #17a2b8;
+            background: #3b82f6;
             color: white;
         }
 
         .btn-excluir {
-            background: #dc3545;
+            background: #dc2626;
             color: white;
         }
 
+        .btn-warning {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .btn:hover {
+            opacity: 0.85;
+        }
+
+        /* MODAL */
         .modal {
             display: none;
             position: fixed;
@@ -155,16 +330,21 @@
 
         .modal-content {
             background: white;
-            border-radius: 20px;
+            border-radius: 16px;
             max-width: 500px;
             width: 90%;
             overflow: hidden;
         }
 
         .modal-header {
-            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            background: #dc2626;
             color: white;
-            padding: 20px;
+            padding: 16px 20px;
+        }
+
+        .modal-header h3 {
+            font-size: 16px;
+            font-weight: 600;
         }
 
         .modal-body {
@@ -172,118 +352,169 @@
         }
 
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 14px;
         }
 
         .form-group label {
             display: block;
-            margin-bottom: 5px;
+            margin-bottom: 6px;
             font-weight: 600;
+            font-size: 12px;
+            color: #374151;
         }
 
         .form-group input,
         .form-group select {
             width: 100%;
-            padding: 10px;
-            border: 2px solid #e0e0e0;
+            padding: 9px 12px;
+            border: 1px solid #e5e7eb;
             border-radius: 8px;
+            font-size: 14px;
         }
 
         .modal-footer {
             display: flex;
             gap: 10px;
-            padding: 20px;
-            border-top: 1px solid #eee;
+            padding: 16px 20px;
+            border-top: 1px solid #f3f4f6;
         }
 
         .btn-salvar {
             flex: 1;
-            background: #28a745;
+            background: #10b981;
             color: white;
             border: none;
             padding: 10px;
             border-radius: 8px;
             cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
         }
 
         .btn-cancelar {
             flex: 1;
-            background: #6c757d;
+            background: #6b7280;
             color: white;
             border: none;
             padding: 10px;
             border-radius: 8px;
             cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
         }
 
+        /* LOGIN */
         .login-area {
             max-width: 400px;
             margin: 100px auto;
             background: white;
-            padding: 30px;
-            border-radius: 20px;
+            padding: 32px;
+            border-radius: 16px;
             text-align: center;
+            border: 1px solid #e5e7eb;
+        }
+
+        .login-area h2 {
+            margin-bottom: 20px;
+            color: #dc2626;
         }
 
         .login-area input {
             width: 100%;
-            padding: 12px;
-            margin: 10px 0;
-            border: 2px solid #e0e0e0;
+            padding: 11px 14px;
+            margin: 8px 0;
+            border: 1px solid #e5e7eb;
             border-radius: 8px;
+            font-size: 14px;
         }
 
         .login-area button {
             width: 100%;
-            padding: 12px;
-            background: #dc3545;
+            padding: 11px;
+            background: #dc2626;
             color: white;
             border: none;
             border-radius: 8px;
             cursor: pointer;
+            font-weight: 600;
+            margin-top: 8px;
         }
 
         .toast {
             position: fixed;
-            bottom: 20px;
+            bottom: 24px;
             left: 50%;
             transform: translateX(-50%);
-            background: #28a745;
+            background: #10b981;
             color: white;
             padding: 12px 24px;
-            border-radius: 40px;
+            border-radius: 8px;
             z-index: 1100;
+            font-size: 13px;
+            font-weight: 600;
         }
 
         .toast.erro {
-            background: #dc3545;
+            background: #dc2626;
+        }
+
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 998;
+        }
+
+        @media (max-width: 1024px) {
+            .btn-menu {
+                display: block;
+            }
+
+            .sidebar {
+                position: fixed;
+                left: -260px;
+                top: 0;
+                height: 100vh;
+                z-index: 999;
+            }
+
+            .sidebar.show {
+                left: 0;
+            }
+
+            .sidebar-overlay.show {
+                display: block;
+            }
+
+            .stats {
+                grid-template-columns: 1fr;
+            }
+
+            .content-area {
+                padding: 16px;
+            }
+
+            .topbar {
+                padding: 16px;
+            }
         }
 
         @media (max-width: 768px) {
 
             th,
             td {
-                font-size: 0.8em;
+                font-size: 11px;
                 padding: 8px;
             }
 
             .btn {
                 padding: 4px 8px;
-                font-size: 0.7em;
+                font-size: 10px;
             }
-
-
-        }
-
-        .btn-warning {
-            background: #ffc107;
-            color: #333;
-            padding: 5px 10px;
-            font-size: 0.85rem;
-        }
-
-        .btn-warning:hover {
-            background: #e0a800;
         }
     </style>
 </head>
@@ -292,43 +523,74 @@
     <div id="loginArea" class="login-area">
         <h2>👑 Área Administrativa</h2>
         <input type="text" id="adminUser" placeholder="Usuário" value="superadmin">
-        <input type="password" id="adminPass" placeholder="Senha" value="admin123">
+        <input type="password" id="adminPass" placeholder="Senha">
         <button onclick="loginAdmin()">Entrar</button>
     </div>
 
-    <div id="adminPanel" style="display: none;">
-        <div class="container">
-            <div class="header">
-                <h1>👑 Painel de Controle - Barbearias</h1>
-                <button class="btn-excluir" onclick="logout()" style="background: rgba(255,255,255,0.2);">Sair</button>
+    <div id="adminPanel" style="display: none; width: 100%; height: 100vh;">
+        <aside class="sidebar">
+            <div class="logo-area">
+                <h2>👑 AdminPro</h2>
+                <p>Painel Super Admin</p>
             </div>
 
-            <div class="stats" id="stats"></div>
+            <nav class="menu">
+                <a class="menu-item active">
+                    📊 Barbearias
+                </a>
+                <a class="menu-item" onclick="alert('Em breve')">
+                    📈 Relatórios
+                </a>
+                <a class="menu-item" onclick="alert('Em breve')">
+                    ⚙️ Configurações
+                </a>
+            </nav>
 
-            <div class="search-bar">
-                <input type="text" id="searchInput" placeholder="🔍 Buscar barbearia...">
+            <div class="user-box">
+                <div class="user-box-top">
+                    <div class="user-avatar">SA</div>
+                    <div class="user-info">
+                        <h4>Super Admin</h4>
+                        <p>admin@agendapro.com</p>
+                    </div>
+                </div>
+                <button class="btn-sair" onclick="logout()">Sair</button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="topbar">
+                <button class="btn-menu" onclick="toggleSidebar()">☰</button>
+                <h1>Gerenciar Barbearias</h1>
             </div>
 
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Nome</th>
-                            <th>Email</th>
-                            <th>Plano</th>
-                            <th>Expira em</th>
-                            <th>Status</th>
-                            <th>Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tabelaBarbearias"></tbody>
-                </table>
+            <div class="content-area">
+                <div class="stats" id="stats"></div>
+
+                <div class="search-bar">
+                    <input type="text" id="searchInput" placeholder="🔍 Buscar barbearia por nome ou email...">
+                </div>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nome</th>
+                                <th>Email</th>
+                                <th>Plano</th>
+                                <th>Expira em</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabelaBarbearias"></tbody>
+                    </table>
+                </div>
             </div>
-        </div>
+        </main>
     </div>
 
-    <!-- Modal Editar -->
     <div id="editModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -363,6 +625,18 @@
         let barbearias = [];
         let barbeariaEditando = null;
 
+        function toggleSidebar() {
+            document.querySelector('.sidebar').classList.toggle('show');
+            let overlay = document.querySelector('.sidebar-overlay');
+            if (!overlay) {
+                overlay = document.createElement('div');
+                overlay.className = 'sidebar-overlay';
+                overlay.onclick = toggleSidebar;
+                document.body.appendChild(overlay);
+            }
+            overlay.classList.toggle('show');
+        }
+
         async function loginAdmin() {
             const username = document.getElementById('adminUser').value;
             const senha = document.getElementById('adminPass').value;
@@ -378,7 +652,7 @@
                 if (response.ok) {
                     adminToken = result.token;
                     document.getElementById('loginArea').style.display = 'none';
-                    document.getElementById('adminPanel').style.display = 'block';
+                    document.getElementById('adminPanel').style.display = 'flex';
                     carregarBarbearias();
                 } else {
                     alert('Acesso negado!');
@@ -421,10 +695,10 @@
                 <button class="btn btn-warning" onclick="resetarSenha(${b.id}, '${b.nome}')">🔑</button>
                 <button class="btn btn-excluir" onclick="excluirBarbearia(${b.id})">🗑️</button>
                 ${b.status === 'ativo' ?
-                        `<button class="btn btn-desativar" onclick="alterarStatus(${b.id}, 'inativo')">🔴 Desativar</button>` :
-                        `<button class="btn btn-ativar" onclick="alterarStatus(${b.id}, 'ativo')">🟢 Ativar</button>`
+                        `<button class="btn btn-desativar" onclick="alterarStatus(${b.id}, 'inativo')">Desativar</button>` :
+                        `<button class="btn btn-ativar" onclick="alterarStatus(${b.id}, 'ativo')">Ativar</button>`
                     }
-                <button class="btn btn-dias" onclick="adicionarDias(${b.id})">📅 +7d</button>
+                <button class="btn btn-dias" onclick="adicionarDias(${b.id})">+7d</button>
             </td>
         </tr>`;
             }).join('');
@@ -441,7 +715,6 @@
             `;
         }
 
-        // Busca
         document.getElementById('searchInput').addEventListener('input', (e) => {
             const termo = e.target.value.toLowerCase();
             const filtrados = barbearias.filter(b =>
@@ -486,7 +759,7 @@
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': adminToken
+                        'Authorization': `Bearer ${adminToken}`
                     },
                     body: JSON.stringify(dados)
                 });
@@ -530,7 +803,7 @@
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': adminToken
+                        'Authorization': `Bearer ${adminToken}`
                     },
                     body: JSON.stringify({ status })
                 });
@@ -554,7 +827,7 @@
                         method: 'PUT',
                         headers: {
                             'Content-Type': 'application/json',
-                            'Authorization': adminToken
+                            'Authorization': `Bearer ${adminToken}`
                         },
                         body: JSON.stringify({ status: 'ativo', dias_extras: parseInt(dias) })
                     });
