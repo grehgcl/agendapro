@@ -1,0 +1,301 @@
+/* /public/css/tabela.css */
+.main-content {
+    margin-left: 260px;
+    padding: 24px;
+}
+
+.topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.topbar h1 {
+    font-size: 28px;
+    font-weight: 700;
+}
+
+.btn-primary {
+    background: #3b82f6;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.btn-primary:hover {
+    background: #2563eb;
+}
+
+.table-container {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+thead th {
+    text-align: left;
+    padding: 12px;
+    border-bottom: 2px solid #e5e7eb;
+    color: #6b7280;
+    font-size: 12px;
+    text-transform: uppercase;
+}
+
+tbody td {
+    padding: 16px 12px;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.btn {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-right: 8px;
+}
+
+.btn-edit {
+    background: #fbbf24;
+}
+
+.btn-delete {
+    background: #ef4444;
+    color: white;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.modal.show {
+    display: flex;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 500px;
+}
+
+.modal-header {
+    padding: 24px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.modal-body {
+    padding: 24px;
+}
+
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-family: inherit;
+}
+
+.modal-footer {
+    padding: 24px;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+.btn-cancelar {
+    padding: 10px 20px;
+    background: #e5e7eb;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.btn-salvar {
+    padding: 10px 20px;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.empty-state {
+    text-align: center;
+    color: #9ca3af;
+    padding: 40px;
+}
+
+.loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.spinner {
+    border: 3px solid #f3f4f6;
+    border-top: 3px solid #3b82f6;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: #10b981;
+    color: white;
+    padding: 16px 24px;
+    border-radius: 8px;
+    z-index: 10000;
+}
+
+.toast.erro {
+    background: #ef4444;
+}
+
+/* Busca e Stats */
+.top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    gap: 12px;
+}
+
+.search-box {
+    flex: 1;
+    min-width: 200px;
+}
+
+.search-box input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 14px;
+    background: white;
+}
+
+.search-box input:focus {
+    outline: none;
+    border-color: #6366f1;
+}
+
+.stats {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.stats.total {
+    font-size: 28px;
+    font-weight: 700;
+    color: #6366f1;
+}
+
+.stats.label {
+    font-size: 12px;
+    color: #6b7280;
+    margin-top: 4px;
+}
+
+@media (max-width: 640px) {
+    .top-bar {
+        flex-direction: column;
+    }
+}
+
+.filters {
+    display: flex;
+    gap: 12px;
+}
+
+.filter-input {
+    padding: 8px 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 13px;
+    background: white;
+}
+
+.filter-input:focus {
+    outline: none;
+    border-color: #6366f1;
+}
+
+.status-agendado {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.status-concluido {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.status-cancelado {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.btn-cancel {
+    background: #f59e0b;
+    color: white;
+}
+
+@media (max-width: 768px) {
+    .filters {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .filter-input {
+        width: 100%;
+    }
+}

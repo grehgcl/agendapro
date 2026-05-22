@@ -1,0 +1,199 @@
+/* /public/css/dashboard.css */
+/* STATS CARDS */
+.stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.stat-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 16px;
+}
+
+.stat-label {
+    font-size: 12px;
+    color: #6b7280;
+    margin-bottom: 8px;
+}
+
+.stat-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+.stat-change {
+    font-size: 11px;
+    margin-top: 4px;
+}
+
+.stat-change.up {
+    color: #10b981;
+}
+
+.stat-change.down {
+    color: #ef4444;
+}
+
+/* CALENDÁRIO SEMANA */
+.calendar-wrapper {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.calendar-header {
+    display: grid;
+    grid-template-columns: 60px repeat(7, 1fr);
+    border-bottom: 1px solid #e5e7eb;
+    background: #f9fafb;
+}
+
+.calendar-header-cell {
+    padding: 12px 8px;
+    text-align: center;
+    border-right: 1px solid #e5e7eb;
+}
+
+.calendar-header-cell:first-child {
+    border-right: 1px solid #e5e7eb;
+}
+
+.day-name {
+    font-size: 11px;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+}
+
+.day-number {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1f2937;
+    margin-top: 4px;
+}
+
+.day-number.today {
+    background: #6366f1;
+    color: white;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.calendar-body {
+    display: grid;
+    grid-template-columns: 60px repeat(7, 1fr);
+}
+
+.time-column {
+    border-right: 1px solid #e5e7eb;
+}
+
+.time-slot {
+    height: 60px;
+    border-bottom: 1px solid #f3f4f6;
+    padding: 4px 8px;
+    font-size: 11px;
+    color: #9ca3af;
+    text-align: right;
+}
+
+.day-column {
+    border-right: 1px solid #e5e7eb;
+    position: relative;
+}
+
+.day-column:last-child {
+    border-right: none;
+}
+
+.day-grid {
+    position: relative;
+}
+
+.hour-line {
+    height: 60px;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.appointment-card {
+    position: absolute;
+    left: 4px;
+    right: 4px;
+    border-radius: 6px;
+    padding: 6px 8px;
+    font-size: 11px;
+    cursor: pointer;
+    overflow: hidden;
+    border-left: 3px solid;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.appointment-card.blue {
+    background: #dbeafe;
+    border-color: #3b82f6;
+    color: #1e40af;
+}
+
+.appointment-card.green {
+    background: #d1fae5;
+    border-color: #10b981;
+    color: #065f46;
+}
+
+.appointment-card.pink {
+    background: #fce7f3;
+    border-color: #ec4899;
+    color: #9f1239;
+}
+
+.appointment-card.purple {
+    background: #ede9fe;
+    border-color: #8b5cf6;
+    color: #5b21b6;
+}
+
+.apt-time {
+    font-weight: 700;
+    font-size: 10px;
+    margin-bottom: 2px;
+}
+
+.apt-name {
+    font-weight: 600;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.apt-service {
+    font-size: 10px;
+    opacity: 0.8;
+}
+
+.apt-price {
+    position: absolute;
+    top: 4px;
+    right: 6px;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 700;
+    font-size: 10px;
+}
+
+@media (max-width: 640px) {
+    .stats-row {
+        grid-template-columns: 1fr;
+    }
+}
